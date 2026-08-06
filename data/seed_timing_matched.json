@@ -1,0 +1,482 @@
+[
+ {
+  "outcome": "rug",
+  "mint": "AUh4NM4phK6BbeFi691VRkkqHWSsiPL1N8h5hdHbGz8U",
+  "pool_creator": "AxTb48EhRdvBg2qhSkXMpDGJAJvpNHmArqW6JRUq4ahn",
+  "seed_funder": "2TbrtEUrS1R97iAuSwPMau8XVLG9dUNCByem2Rsyz16V",
+  "seed_sol": 627.435775,
+  "funding_gap_slots": 71
+ },
+ {
+  "outcome": "rug",
+  "mint": "9qiDk1jLQwUvq7KnjokZ8BFdnPLNSDEGmbXikWmQfWs1",
+  "pool_creator": "4G3EhybtTEBxec122D8tJyUirF2yFQo2K2jC49LrCcmE",
+  "seed_funder": "Aq7WPwsRRK28KuSQnAvzwzDcbYkCCfVtLjxhrYGc9ZLL",
+  "seed_sol": 114.894815,
+  "funding_gap_slots": 38
+ },
+ {
+  "outcome": "rug",
+  "mint": "6yBMypFF7r7E4EjeWCASfixsLSkcjJo27mG68mVaCtZe",
+  "pool_creator": "FBfJn4kZJTNqDEf1iXDbuQU6pTLMPr4Nez6aak14QHRK",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 81.740489,
+  "funding_gap_slots": 79
+ },
+ {
+  "outcome": "rug",
+  "mint": "7ZwwvzqYd3Jky2J28tLwxQgQ6HZtj1ZeMDKDbzhn81cT",
+  "pool_creator": "C56WjWznh7jiDnckYJX2k2ijFw49xvdPMtWK93ymE7mi",
+  "seed_funder": "4fEfEPJFGeoQHQQeztudc2C5kwL4AjDKuzntXmBLibDK",
+  "seed_sol": 377.305016,
+  "funding_gap_slots": 282
+ },
+ {
+  "outcome": "rug",
+  "mint": "ByfWRCdGTCq11XTofdt5vgfAeBzmRQUaFr4XQF4ev6kb",
+  "pool_creator": "BWxsk4zwra9sC8ssg2QqNA6piv8J6zQzLTyTtn4KjwuQ",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "rug",
+  "mint": "6rXzVSJSctZLyPUnJwDvLT66VdH1RqSa6vPTF1zLZLx3",
+  "pool_creator": "FX2VHtipq9smMWjEVidFv5RBi9nerQoXoKLworD9DFRH",
+  "seed_funder": "8zxkmeqHrpmqyzCSGxLNWZ4W7ZgjwHuo4HV11ALceNAg",
+  "seed_sol": 109.15665,
+  "funding_gap_slots": 57
+ },
+ {
+  "outcome": "rug",
+  "mint": "vq9nLWAXbTQFGiL7xTcooYhyBo8TowH6QC5RDNGTTJ4",
+  "pool_creator": "BLCWAB2z8waeQnamCdJrhNzvqrmeWLoZviPFgP6DhHRr",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "rug",
+  "mint": "2PmdSjW3XACqVcubSV3XvCN6m86FrYYD5AqNnewJpump",
+  "pool_creator": "59BmtdNm2e8sUNKRiHxWs55jArStmYyccig6WtUhT5rr",
+  "seed_funder": "GRZp2t6LoKLCs6Kidqfja7iqDdNQadok5Ez6xMLZPo2N",
+  "seed_sol": 190.466338,
+  "funding_gap_slots": 29
+ },
+ {
+  "outcome": "rug",
+  "mint": "36yS3CCzuaYZvXvA9UDAqGyxyMfiSxBfaz99Te1xZnjz",
+  "pool_creator": "H2mKAmEDpyVbX6hKUo1rrNA1XUVVpNPkDnfrL65Sg6xz",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 189.716408,
+  "funding_gap_slots": 54
+ },
+ {
+  "outcome": "rug",
+  "mint": "BXq9ptSHhtA5KHBnKUU8xZr5j8m9BiyqzuQyvGStPkXg",
+  "pool_creator": "DRzE7pZdPhEadt2HDWUT7AQYj4Adq9gyBVWg2QfJf4UX",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 117.849591,
+  "funding_gap_slots": 77
+ },
+ {
+  "outcome": "rug",
+  "mint": "7sZyoKBkAfbGVEyde4dkyHLRd98eGNEDF4NmEmbKpump",
+  "pool_creator": "GRvvYJsxKsvDyqsW26FiiRA3M8R82QFdq7W8x7JYaNAM",
+  "seed_funder": "7F4VnYyhC6g4wuc6dD546ZiZG5aj8PsyGBepVKsBWZ5W",
+  "seed_sol": 177.374208,
+  "funding_gap_slots": 30
+ },
+ {
+  "outcome": "rug",
+  "mint": "EFXzeMLvEoxFq2UoS1bGzndTGEjoFxrDdchMrCT6FUcu",
+  "pool_creator": "A3bwR4cCH18aKFDtp6Yrae4D9FSsCwvjnCz9ZDQwfbpY",
+  "seed_funder": "CmdxEBCubitREoJTwZxB6jsPR6mawJPcva9aYfFpAEMk",
+  "seed_sol": 147.635449,
+  "funding_gap_slots": 51
+ },
+ {
+  "outcome": "rug",
+  "mint": "878QHrYrv7EGxh5o7SXiQTUndHJ9BC7xCTXr8uTnwZGF",
+  "pool_creator": "4m77yD1mjrfA32cBWqFpoLc2De9Biior2h58sgJPmRJk",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 112.0003,
+  "funding_gap_slots": 29
+ },
+ {
+  "outcome": "rug",
+  "mint": "CL3Eyo6BEn2bgFMRdkUV9pbmgcqLWbPHU1N4DL9t4C45",
+  "pool_creator": "CccTgnjT2AB7stgRXGFhWgpveb95Vi6LZ4mniNgBLFXG",
+  "seed_funder": "8zxkmeqHrpmqyzCSGxLNWZ4W7ZgjwHuo4HV11ALceNAg",
+  "seed_sol": 137.308463,
+  "funding_gap_slots": 45
+ },
+ {
+  "outcome": "rug",
+  "mint": "8DxGarVQDQdjZP7GnLG3p8yFpa5H6xpaC5KAS6LL5qbp",
+  "pool_creator": "7odmktqKeQZyD2BknUKCjaXDt855j6GwePSAkUhcJyUh",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 157.67544,
+  "funding_gap_slots": 88
+ },
+ {
+  "outcome": "rug",
+  "mint": "KhizTeip61K4fZ6nNe7oXep8EtX7wsSYqQ1HdDjpump",
+  "pool_creator": "D9VmrKFs3jNgRpGmjacqECFGViRpJK2tiEoRUUUUgCJ7",
+  "seed_funder": "8BPjpSzWKZNjemi1h1TxkTmmR3RS1Cr9TjdAiVgGGFL",
+  "seed_sol": 285.774005,
+  "funding_gap_slots": 26
+ },
+ {
+  "outcome": "rug",
+  "mint": "XWuWkozMzVtiuy1cmE91Lf4iBHGwW3jLUJpVcu5pump",
+  "pool_creator": "DVitwmgNs34p8fTtQHjJqzCaC3WbfnSJuPJYbdEuGCxw",
+  "seed_funder": "9cJvRFD8FUo3ctW9VmqSYgTaLXuBAyLz8dCdtPg928aq",
+  "seed_sol": 205.335057,
+  "funding_gap_slots": 26
+ },
+ {
+  "outcome": "rug",
+  "mint": "G1QF7RWqtVNzLxx2oEnMTKPfjEXm67BEtzproJWqpump",
+  "pool_creator": "Fk5TiNdLiSjDbjUPfuH5zVHR77vLFZwJHgPFEevAGq9H",
+  "seed_funder": "3CaACrpBMfF1eu5jskf5LgEw2MUFtxtQcnQXBCDWTJbr",
+  "seed_sol": 270.941717,
+  "funding_gap_slots": 26
+ },
+ {
+  "outcome": "rug",
+  "mint": "GNYoUEhLLTiHDS3ZPesNqS6AcCBGk6uxGzXWNXo1vcMJ",
+  "pool_creator": "M9Be19iYgioVD3ktqB56FVvbzwMswwQiYrT2r67PnAV",
+  "seed_funder": "FUPNxZw2kdauXYMEEmzgkNmeQ47dnQPVs4u5BMHmTHZX",
+  "seed_sol": 71.792005,
+  "funding_gap_slots": 41
+ },
+ {
+  "outcome": "rug",
+  "mint": "CUm1jCPEgNP7CMenxfDbNyFUfyhihNG4hGTR5NdApump",
+  "pool_creator": "D65kgi8ezRA1z2osh7vdMjED7je85H16aahAazd8V5B5",
+  "seed_funder": "65tgGbsGME2GmZguX6f68mw5jb3fUDSvzfR8uGX18Maj",
+  "seed_sol": 205.159795,
+  "funding_gap_slots": 28
+ },
+ {
+  "outcome": "rug",
+  "mint": "EzYcXQxJPojuzbYZAAQwYguHPtADhCZxUvf3TJNjtwLa",
+  "pool_creator": "DpCABUHVWYRnX1RYyzWQYqugxce2XHE151YJU1rd4xEJ",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 125.248574,
+  "funding_gap_slots": 39
+ },
+ {
+  "outcome": "rug",
+  "mint": "GmT41FXbmxNiHhtM7k3gUtJYBjS5SfQmEnHJWyR2rMaY",
+  "pool_creator": "aL8342qFZxpgbEEp1KUAQYxx5RJsqFskTRasYzSt657",
+  "seed_funder": "8zxkmeqHrpmqyzCSGxLNWZ4W7ZgjwHuo4HV11ALceNAg",
+  "seed_sol": 117.425413,
+  "funding_gap_slots": 41
+ },
+ {
+  "outcome": "rug",
+  "mint": "931nheAfJHRhRE8C6T494gxL3UX1JhEugn8SDYwNt4ff",
+  "pool_creator": "FRs6Jk9bSdYzoo7ZgVu4Yao3spcDwnMyFMMnRLXAgQZq",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 119.648832,
+  "funding_gap_slots": 82
+ },
+ {
+  "outcome": "rug",
+  "mint": "CgKpYbFk91t8H6dJtpAHLTyiRqs55pcwSZcRsSaqBcDQ",
+  "pool_creator": "7Z1yD661nMTjFPPGcoi8kRCQxbSKDBxegFY1hZc1frvC",
+  "seed_funder": "5dxvr2A9TwMs1gnQ7gCpYiem9ArtcqmnuKHF76Yr2mT6",
+  "seed_sol": 161.75938,
+  "funding_gap_slots": 363
+ },
+ {
+  "outcome": "rug",
+  "mint": "Cnw13USkF9UfzfVcrjroK7xLqmcmFzEegGqpZd6TKoB6",
+  "pool_creator": "7gdTSHu96mdeHPVRGLfWxJfjmZe7sojiKsPnajCf6BW5",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "rug",
+  "mint": "Hsy8uy46dw18zzu8Qq3GE5WuhQz2eviMaZbxmeR4pMJW",
+  "pool_creator": "2k7QMVxzzeHbH1ABy6gtJyKtBqogMBZpaMLJ3eYJ5L8h",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 128.820384,
+  "funding_gap_slots": 45
+ },
+ {
+  "outcome": "rug",
+  "mint": "G4qumS2rrDdoLqAC1u1mv44JExD4jsnp7d9GiB36z38u",
+  "pool_creator": "HxS5NxiCFPJYt11nMzdTY8HNaUcQwpCDrKuD1Zd9SonA",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 116.852075,
+  "funding_gap_slots": 70
+ },
+ {
+  "outcome": "rug",
+  "mint": "2N8x6HKQpbAvdpKCTMZu7JwsCKVHpexDe1DyvMMqpM2n",
+  "pool_creator": "84aLxMoivY9AvMPLadZbJgdaZpTiFAyuekmm2AD7cqCj",
+  "seed_funder": "8zxkmeqHrpmqyzCSGxLNWZ4W7ZgjwHuo4HV11ALceNAg",
+  "seed_sol": 132.065806,
+  "funding_gap_slots": 176
+ },
+ {
+  "outcome": "rug",
+  "mint": "9sEP45AXkshT8SkgrY6NY5ot4R6y94ZQdn9P53TyRERd",
+  "pool_creator": "5tBmNciRxsMVPYMxrXvbQmMq7sbzdmWwH9khfnRaYReo",
+  "seed_funder": "JAskRaiPGjj5TbdTB3GxzdyhghdqzTyG8XTSTj43FsTB",
+  "seed_sol": 809.231414,
+  "funding_gap_slots": 229
+ },
+ {
+  "outcome": "rug",
+  "mint": "87C3eoJ232hu46DuKD8ya6HJ2wTq7dmM6JJjDJ2rpump",
+  "pool_creator": "7LiaQxzsPxhJPCpFU7DxCuV2FEd5KSkXYeVeSGbAmdSb",
+  "seed_funder": "2VRT3EjZodTR85ZkFFQi7bmEkV6tNAPjA5fFGkcyqKNX",
+  "seed_sol": 151.16744,
+  "funding_gap_slots": 28
+ },
+ {
+  "outcome": "surv",
+  "mint": "B9vdpocjwZs4cMsNHGCuJCEHaoVrHp4Q7Jr8H44Q5a7D",
+  "pool_creator": "8S19EH4oxnvCx6P3ApzuqHSXCgkpyShAn7fiwM4V8uAW",
+  "seed_funder": "DJseEegfighzmdgLDT5HDmLaAx9PQgDjh9GstLTzpbWk",
+  "seed_sol": 127.573113,
+  "funding_gap_slots": 900
+ },
+ {
+  "outcome": "surv",
+  "mint": "hHYYFdTqNvAVPimQWdT7hsKmvayqRa65nCyMSfAZbz7",
+  "pool_creator": "28pCZvhFNf6Aovn1k852817CyAFfQ4squmDBq6vSaBP1",
+  "seed_funder": "9rtqtQgDuw1Da61BHYmLtWmbaZaCixZnxooueuowYfny",
+  "seed_sol": 156.052212,
+  "funding_gap_slots": 55
+ },
+ {
+  "outcome": "surv",
+  "mint": "g2c7apr4Ws8De3SDU2zLYVZuSorUaTaxab1FG5zJNow",
+  "pool_creator": "9iKqJgE6zP9AXEkcLgitHpwYPTcsNFzWu2s5vQHBG8Uv",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "3npFrmuJVo1s28ezLmhrQ8LWtzqHFxN8rM9MmqHz8gMH",
+  "pool_creator": "JC6jg18HgCmDLPdkFLiiqb3cxsNjyyB7iX4nJP7PE42t",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "CX3ets8JseVjPk3hMG5f8V4yFLyserkd33ZvQPFJt2wH",
+  "pool_creator": "BiLWifv5PYN6vaPFvfpKyqZN1f2bvpbSS5LpyDfTGk1w",
+  "seed_funder": "5dxvr2A9TwMs1gnQ7gCpYiem9ArtcqmnuKHF76Yr2mT6",
+  "seed_sol": 157.806672,
+  "funding_gap_slots": 88
+ },
+ {
+  "outcome": "surv",
+  "mint": "DxVqXS1G5Q4GDKD8A7hCBkDSSsqwbydrBMsjVLEAGX3R",
+  "pool_creator": "4xg5bohbhPP1rf8jCVmDSGvGPu7ffGdu8qYfuXUAdcw3",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "6GLEwrkz9K91pSWvC7PtaBqj3LhebzzP6rhB86GLer5o",
+  "pool_creator": "ExtjuRmABroV7SRdt2DCbpzEw6VzZxaqsC7FXYdp2MFc",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 189.29128,
+  "funding_gap_slots": 104
+ },
+ {
+  "outcome": "surv",
+  "mint": "3wyGT5sSveNKuQ4dr7K3tb2PiS39uwhj5DPVMgXDZrPq",
+  "pool_creator": "uJxfFCXVAVNMCHD8xJz24s8zguiuc2Wr4nZ35juik7x",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "DJipvF76jKgbh8rkfZpJEkcUXsN6hLyy99oJQB5QXJtS",
+  "pool_creator": "AYNcd9KDctU18r5kA7LEoc3ZYaRXZgrbKtyX6htQaYRv",
+  "seed_funder": "9XD1eytHpLCJaqypFruDyUbaRGKTZyQHVH46U3bqYw4W",
+  "seed_sol": 209.933116,
+  "funding_gap_slots": 66
+ },
+ {
+  "outcome": "surv",
+  "mint": "PnkKeeHQ5qsaees6KWquikVJxYTZNxPLyHLJsgsGrGi",
+  "pool_creator": "6gqqWTBvKVdVdw8zmmDTrTCG1px9HouCX5msu1K3fdoj",
+  "seed_funder": "5dxvr2A9TwMs1gnQ7gCpYiem9ArtcqmnuKHF76Yr2mT6",
+  "seed_sol": 158.701685,
+  "funding_gap_slots": 139
+ },
+ {
+  "outcome": "surv",
+  "mint": "2N7G1Xwju2MGTghYUx2oSSVS2WZ7TVkhKZDyXrDdqC1N",
+  "pool_creator": "DjkSVpQcYdpvMJwjmTUv717LfD8PaX2JVNhFULeWRu3D",
+  "seed_funder": "CB7wuBxFPqXwTHrKsZS5waUcVWRSwfFeYJyBKqcgVsvB",
+  "seed_sol": 379.787565,
+  "funding_gap_slots": 179
+ },
+ {
+  "outcome": "surv",
+  "mint": "13bNjU44sJRNzcriJBDUF5LzwYxY6SdvWkf7rjnbBPXj",
+  "pool_creator": "94CPF7D7GZewywzt2FPTU4N9MejUogaQtToe4far9zJ4",
+  "seed_funder": "Aq7WPwsRRK28KuSQnAvzwzDcbYkCCfVtLjxhrYGc9ZLL",
+  "seed_sol": 134.986865,
+  "funding_gap_slots": 43
+ },
+ {
+  "outcome": "surv",
+  "mint": "C85LMkVo3MnCfU4Vhr7rED45VCZB2iq4yyNrRd4vVduk",
+  "pool_creator": "CnEw6JiK5kJdM2882GFNGd1sbeU5zogZC85pMowBr45F",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 83.79441,
+  "funding_gap_slots": 74
+ },
+ {
+  "outcome": "surv",
+  "mint": "MSpbXSNyZfVyaeEkMLqqZt1qwRXRdRLYdnpXiYrJjJX",
+  "pool_creator": "8f5TkRi4LV25uUbcAkP3nhtaAFGCfCeov4Tj2n1uykin",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "DCh8tnWujexKGtfsGErfCmywyTiXp2o1L4jCTttoiXqU",
+  "pool_creator": "FR8ZZaH24UohcaCyeeJQTrV9Dz2U3pMN6VnTREkoNdQe",
+  "seed_funder": null,
+  "seed_sol": null,
+  "funding_gap_slots": null
+ },
+ {
+  "outcome": "surv",
+  "mint": "DidaiFz1kPDLELXpsmcEP4hhnC3dC1xssHTXSGyAKmR",
+  "pool_creator": "3b4roaRTzXeSkaHYW3i8TzrMFZDwZdVu9Mq2Ako9jgnf",
+  "seed_funder": "FvNF1AiwPbatLWYamgsZyCXjsTnTzJMvs6SCStnLxB89",
+  "seed_sol": 751.112507,
+  "funding_gap_slots": 191
+ },
+ {
+  "outcome": "surv",
+  "mint": "Ab3RF1JWF9MyBuUW1FPKu7pQvQnYeErcQ4HyjowShnLe",
+  "pool_creator": "DY9m41vZv9ybUgxfFYnYDMHqegZRbvTKj3tDtykSLzEf",
+  "seed_funder": "5ZhUK7RhL6S2cgwrGJg87yJ9dVuyTqSvhj6P38yBZsp",
+  "seed_sol": 340.000011,
+  "funding_gap_slots": 200
+ },
+ {
+  "outcome": "surv",
+  "mint": "C6fArzqCrvkzkdGwA88JrkXR3BCgT7vQ2eposwBDCPxR",
+  "pool_creator": "7vjuFLm1RHr7EAbAReibJqUgo43njwLvGUXiTemijfw3",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 124.753754,
+  "funding_gap_slots": 38
+ },
+ {
+  "outcome": "surv",
+  "mint": "Hi4RwnKXvN8V9ZFyYzS3agWmACFMnqVTB1nnK2x9XTVG",
+  "pool_creator": "Cef6WNXjXehMeC9dvJjj4hoosw1i8d17YWpWd75mNgNp",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 122.295867,
+  "funding_gap_slots": 45
+ },
+ {
+  "outcome": "surv",
+  "mint": "byKSdUZmsKoJTiRB2jTcpsUSscrgnuaQnoKp11ypump",
+  "pool_creator": "CBk7YDEUsRuQ9KUASFSGGWJjjMg1bB5XcRf3me5gpioJ",
+  "seed_funder": "D3PD8ZuZSzRMUBgqRmyGdS2spq2PR7too2MvZXNugZ6L",
+  "seed_sol": 229.864684,
+  "funding_gap_slots": 27
+ },
+ {
+  "outcome": "surv",
+  "mint": "FuK8Z6wZ3pykbNb4ZxoCctbCFREE2rdevaMoxEwwqX3Q",
+  "pool_creator": "S5wzEvmh1CCF1sJtS3fzzxnHvoew76GBsCc4zwy4fh8",
+  "seed_funder": "EvYS86hkknqV7rgnqni2s5vKbd1QGGmZ3412yVtSZJhM",
+  "seed_sol": 863.330889,
+  "funding_gap_slots": 1856
+ },
+ {
+  "outcome": "surv",
+  "mint": "28LuGqHxiWskzoJh34tfKGG6UviZa5UsJ1VXU6tgWaDs",
+  "pool_creator": "2dURNWAHCUJhVdR7yCLu5Psf6cw2aKFvXseDQC5cPPdJ",
+  "seed_funder": "CHFhuJytRUjA4FtEU6vrXqUVkP3kfi6G8kNiG7ePVhNm",
+  "seed_sol": 288.454544,
+  "funding_gap_slots": 55
+ },
+ {
+  "outcome": "surv",
+  "mint": "AxfuDBoaDAqWDJ3wPksisCVMGL9JpxsBkgRGuiVhvELp",
+  "pool_creator": "CNfX6befkL7TCZxoKqzZj4qYfVgDeyAzVCLeT9NWUQhv",
+  "seed_funder": "5ARipQXUFP13QzHau8moMxpvLzXwMLgLgpzjpbsrUzTa",
+  "seed_sol": 123.03217,
+  "funding_gap_slots": 34
+ },
+ {
+  "outcome": "surv",
+  "mint": "9DmH1qXGwuL9uExjsiFoqwJA4HDPS1UHGDviLr7dGc3G",
+  "pool_creator": "ABv7MHBFPh8xRvXMyrpURsKXqHua4RZ6VFpn2oXbXa2V",
+  "seed_funder": "2eJTHJDFKsQ91y3v6vxLae1LERambLe2RtyPwc712QUc",
+  "seed_sol": 85.390359,
+  "funding_gap_slots": 50
+ },
+ {
+  "outcome": "surv",
+  "mint": "6kF5F43uEmNa4xm7styCgEmqwWNc9hYrcTUcM2ohjrof",
+  "pool_creator": "FPJKuynTkaMiaJskpVXJv6kksmGwoaMuQvP2KKEW445X",
+  "seed_funder": "2rLbmiWoT5W79ZARqSfZaFx3h4TwTgkCSNB4jNLrVJLZ",
+  "seed_sol": 808.713863,
+  "funding_gap_slots": 57
+ },
+ {
+  "outcome": "surv",
+  "mint": "Ew1gXaVo2dM9qZdG9wfaPSs8vnYWbVgsThZJvd86pump",
+  "pool_creator": "4kX3nyVQDtRpirekdE5GbgEtkyJd1sZpfoB9EuQqKfcS",
+  "seed_funder": "73gjFykPUVenaX1b6niSWvwqC5ktFYraUb4v6FQR15J9",
+  "seed_sol": 182.152702,
+  "funding_gap_slots": 33
+ },
+ {
+  "outcome": "surv",
+  "mint": "APKBDXmxQwPvUxSUy69U1pfzu9eg3D1uSwNNxvAppzHW",
+  "pool_creator": "J4tMZ8LwDkfmPktYcVQvUDLJYYcCasWhacykhXdCJ7p9",
+  "seed_funder": "3JXy5G2DzB6DTbWbS33zuk6vdR5gWAs7qY8ooRrskpHD",
+  "seed_sol": 85.390359,
+  "funding_gap_slots": 55
+ },
+ {
+  "outcome": "surv",
+  "mint": "Fzb6A8Y23DjsQ5h4JtHG7qdMv3W9sxLYsgufrpgyNxfD",
+  "pool_creator": "FxamUZoDtHbvXUb4pCRcPWkkKmkdNFNFtas4D2yXN4z3",
+  "seed_funder": "CmdxEBCubitREoJTwZxB6jsPR6mawJPcva9aYfFpAEMk",
+  "seed_sol": 147.354086,
+  "funding_gap_slots": 57
+ },
+ {
+  "outcome": "surv",
+  "mint": "BzsFhq2VxqgV88oxriPhxFyuugrQJnBnZn6HuyYXzwVt",
+  "pool_creator": "Be7we3GuEGLQhhn73kxg1gUuYrdiazZyCjrvKaJYszn",
+  "seed_funder": "DyaESzDfBLtbvKz7iM5Th6nsbsGSpjt5NLXuieigRcZX",
+  "seed_sol": 86.027286,
+  "funding_gap_slots": 76
+ },
+ {
+  "outcome": "surv",
+  "mint": "6d1xytQDP8NiMV17ma25Y4rGM7vcGKGLVcNasaLLKnoC",
+  "pool_creator": "14SfDu3SCdq4gpsg7YF7jHN2aEMr4PKva7Nfu6sDfwWJ",
+  "seed_funder": "DcKA4C451gUHKCWbDPgbQkhV7oMBZ9azoXB6RMTeX9yb",
+  "seed_sol": 366.055136,
+  "funding_gap_slots": 14388
+ }
+]
