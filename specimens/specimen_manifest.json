@@ -1,0 +1,70 @@
+{
+  "description": "Real mainnet transactions used as provenance specimens. Every signature and account here is public on-chain data and can be checked on any Solana explorer. This manifest records what each transaction is and the key facts a correct decode must reproduce; it does not contain the raw transactions. Use tools/fetch_specimens.py with your own RPC endpoint to materialize the raw getTransaction responses into specimens/raw/, after which tests/test_specimens.py runs the verifier against them.",
+  "provenance": "Signatures, expected verdicts, and the recorded evidence below were taken from a prior offline decode of these transactions (logs/genuine_grad_fixture_decisions.json in the source research project). The recorded evidence is what that earlier decode observed on chain; the fetch tool and test re-derive the same facts from the freshly fetched transaction and compare, so a wrong or truncated fetch is caught.",
+  "expected_verdict_values": ["GENUINE_PUMP_FUN_GRADUATION", "NOT_GENUINE_PUMP_FUN_GRADUATION"],
+  "note_on_outcome": "These transactions were classified genuine/not-genuine by the earlier decode. Whether THIS repository's stricter, account-bound verifier reproduces that classification is exactly what the specimen test measures. A genuine specimen that this verifier rejects would be a real finding about the verifier's strictness, not a defect in the specimen.",
+  "specimens": [
+    {
+      "name": "canonical_positive_1",
+      "signature": "426ARdryCJ6JL2RPZ6RRRbjZfEfzkQGfK3Ta1yhYFa7634PjGBLqcJbpamBA5exxQ2Aa4XZv6EmV3Q8uXizpFBMY",
+      "slot": 426905196,
+      "base_mint": "QqsdC7q8xMrofZDb9Am7ktw5gJcHtpvW2gr71wYpooL",
+      "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
+      "recorded_evidence": {
+        "sol_migration_debit_sol": 85.005361,
+        "lp_mint": "EeKqLTxm5WSTEpeRgRoWCqTkg92sMoTjveKSVpv7yobm",
+        "lp_account": "2hXzdDP2WedvuaGUprJwqfqg8BjR2xUg9RdNdsn2ZD71",
+        "lp_mint_burn_amount": "4193388320323"
+      }
+    },
+    {
+      "name": "canonical_positive_2",
+      "signature": "mabA5Gkfjab3pVE1h22dbdaEbACktgaTKoBhZDgCGGgmigPtjGAsHpSjz1J3gSPPAd7Jib1DNYQj5Zr3z6EDKeG",
+      "slot": 426904767,
+      "base_mint": "ADA9mtno4BVknoSefbqdh7aMPg4wwxZHKByRpJNTpump",
+      "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
+      "recorded_evidence": {
+        "sol_migration_debit_sol": 85.005359,
+        "lp_mint": "9aNPaG4Jq6oKhVFVsHiAdP5WhXeLPo5nxuxSSJtNcDRe",
+        "lp_account": "3WHgMhFoU4scBxuHH7DZbz5TwmaZKCdt2857xdfwgZWx",
+        "lp_mint_burn_amount": "4193388282504"
+      }
+    },
+    {
+      "name": "canonical_positive_3",
+      "signature": "3GbqAuXF8AmxhS9FrZBJXoJQ45oecRM1wwaYVtYMNP4m66AYu3zvHU6yPGxVN5wHAS5H3nkcXg39pFnQBPPKcpaM",
+      "slot": 426904304,
+      "base_mint": "9qoUsoRmV46jaSxrJJ3C6sAc3sJ7mGAigTGCZk91pump",
+      "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
+      "recorded_evidence": {
+        "sol_migration_debit_sol": 85.005359,
+        "lp_mint": "AV3P1WxLAtMVXPUiRSzdYx68dSvr5Y1yNg8LgeG9NnGE",
+        "lp_account": "914cpnsKiZAdfvkTErSrcZ5Dbgo5fqEYLoXioZxpcXiA",
+        "lp_mint_burn_amount": "4193388284774"
+      }
+    },
+    {
+      "name": "canonical_positive_4",
+      "signature": "2nWaSa88b8715bhezsb32s9GuSTAjuJPfPs8Sfti8k9zoJs5t8eMzahDf7JYabWFbGKdnSvQ6PPUnVG9H48hAoGZ",
+      "slot": 426901881,
+      "base_mint": "Hu1GczL7tWCSDZtRycjDFcmfoU4WU2wCP4ZMRdQpump",
+      "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
+      "recorded_evidence": {
+        "sol_migration_debit_sol": 85.00536,
+        "lp_mint": "8dLFhxDygJsKYPVWrd2wuKaLHir7jFobZ7tVDft8C5uZ",
+        "lp_account": "8mt6dMgzJFrpC682N6khZLP7rVVE212pqaBkE1aEXw9o",
+        "lp_mint_burn_amount": "4193388301451"
+      }
+    },
+    {
+      "name": "negative_pump_and_pumpswap_no_lp_burn",
+      "signature": "3ewQKsS1KhyYcTyyFfjg1CKb4LN6RqGwbB4oXdUAs4bw7eqqREdm44vGPBpxKEcTbhiK51gT2hzHdpUBkUCxga8f",
+      "slot": 426901563,
+      "base_mint": "Fvqj37hHtB37A5KnjY7r12E4pgLLUTtJiLFMyswsicar",
+      "expected_verdict": "NOT_GENUINE_PUMP_FUN_GRADUATION",
+      "recorded_evidence": {
+        "note": "The earlier decode found the pump.fun and PumpSwap programs present but no matching LP mint-and-burn, so provenance was not established. This is the discriminating negative: a transaction that clears the program checks but fails the LP-destruction requirement."
+      }
+    }
+  ]
+}
