@@ -34,6 +34,8 @@ __all__ = [
     "LpAccountState",
     "verify_migration_evidence",
     "build_evidence",
+    "propose_migration_context",
+    "screen_pool",
 ]
 
 PUMP_FUN_PROGRAMS = frozenset(
@@ -846,3 +848,205 @@ def verify_migration_evidence(
         if not predicate(evidence):
             return MigrationEvidenceVerdict(EVIDENCE_NOT_ESTABLISHED, name, evidence)
     return MigrationEvidenceVerdict(EVIDENCE_MATCHED, None, evidence)
+
+
+# --------------------------------------------------------------------------
+# Convenience: derive a candidate context, then verify it.
+#
+# ``verify_migration_evidence`` requires the caller to name every migration
+# account up front. That is correct for the strict check, but a screener
+# examining an unknown pool does not yet know the LP mint, the LP token account,
+# the base-token source/destination, or the SOL source/destination — those live
+# inside the migration transaction. It only knows the two facts you have from
+# the pool account itself: the pool address and its non-WSOL mint.
+#
+# ``propose_migration_context`` derives the remaining accounts *structurally*
+# from the transaction (the LP mint/burn pair, the two base-mint balance moves,
+# the large bound SOL debit and its matching credit) and refuses when any role
+# is ambiguous. It does not rank by magnitude and then hope: the proposal is
+# only a candidate. ``screen_pool`` passes that candidate straight into
+# ``verify_migration_evidence``, which re-binds and re-checks the whole
+# structure and fails closed if the derivation was wrong. A wrong proposal
+# cannot produce a match.
+# --------------------------------------------------------------------------
+
+
+def _unique(values: list[str]) -> Optional[str]:
+    """Return the single distinct value, or None if there are zero or several."""
+    distinct = set(values)
+    return next(iter(distinct)) if len(distinct) == 1 else None
+
+
+def _derive_lp_pair(
+    outer: list[dict[str, Any]],
+    groups: dict[int, list[dict[str, Any]]],
+    base_mint: str,
+) -> tuple[Optional[tuple[str, str]], Optional[str]]:
+    """Find the single LP (mint, account) minted then burned under a pump.fun group."""
+    pairs: set[tuple[str, str]] = set()
+    for index, instruction in enumerate(outer):
+        if instruction["program_id"] not in PUMP_FUN_PROGRAMS:
+            continue
+        inner = groups.get(index, [])
+        mint_to: dict[tuple[str, str], set[str]] = {}
+        burns: dict[tuple[str, str], set[str]] = {}
+        for inner_instruction in inner:
+            if inner_instruction["program_id"] not in SPL_TOKEN_PROGRAMS:
+                continue
+            parsed = inner_instruction["raw"].get("parsed")
+            if not isinstance(parsed, dict) or parsed.get("type") not in ("mintTo", "burn"):
+                continue
+            info = parsed.get("info")
+            if not isinstance(info, dict):
+                continue
+            mint = info.get("mint")
+            account = info.get("account") or info.get("destination")
+            amount = _lp_amount(info)
+            if not _is_pubkey(mint) or not _is_pubkey(account) or amount is None:
+                continue
+            if mint in (base_mint, WSOL_MINT):
+                continue
+            bucket = mint_to if parsed["type"] == "mintTo" else burns
+            bucket.setdefault((mint, account), set()).add(amount)
+        for key, minted_amounts in mint_to.items():
+            if key in burns and minted_amounts & burns[key]:
+                pairs.add(key)
+    if len(pairs) != 1:
+        return None, "lp_pair_not_unique" if pairs else "lp_pair_not_found"
+    return next(iter(pairs)), None
+
+
+def _derive_base_flow(
+    meta: dict[str, Any], keys: list[str], base_mint: str
+) -> tuple[Optional[tuple[str, str]], Optional[str]]:
+    """Find the single base-token account debited and the single one credited."""
+    raw_pre = _sequence(meta, "preTokenBalances", none_is_empty=True)
+    raw_post = _sequence(meta, "postTokenBalances", none_is_empty=True)
+    if raw_pre is None or raw_post is None:
+        return None, "token_balances_not_list"
+    pre, error = _token_balance_map(raw_pre, keys)
+    if error:
+        return None, error
+    post, error = _token_balance_map(raw_post, keys)
+    if error:
+        return None, error
+    indexes = {index for (index, mint) in pre if mint == base_mint}
+    indexes |= {index for (index, mint) in post if mint == base_mint}
+    sources: list[str] = []
+    destinations: list[str] = []
+    for index in indexes:
+        delta = post.get((index, base_mint), 0) - pre.get((index, base_mint), 0)
+        if delta < 0:
+            sources.append(keys[index])
+        elif delta > 0:
+            destinations.append(keys[index])
+    if len(sources) != 1 or len(destinations) != 1:
+        return None, "base_flow_not_unique"
+    return (sources[0], destinations[0]), None
+
+
+def _derive_sol_flow(
+    meta: dict[str, Any], keys: list[str]
+) -> tuple[Optional[tuple[str, str]], Optional[str]]:
+    """Find the single account debited >= the migration floor and its matching credit."""
+    raw_pre = _sequence(meta, "preBalances")
+    raw_post = _sequence(meta, "postBalances")
+    if raw_pre is None or raw_post is None:
+        return None, "sol_balances_not_list"
+    if len(raw_pre) != len(keys) or len(raw_post) != len(keys):
+        return None, "sol_balance_length_mismatch"
+    if any(type(v) is not int or not (0 <= v <= _U64_MAX) for v in raw_pre + raw_post):
+        return None, "invalid_sol_balance"
+    sources: list[tuple[str, int]] = []
+    for index in range(len(keys)):
+        debit = raw_pre[index] - raw_post[index]
+        if debit >= _MIGRATION_SOL_MIN_LAMPORTS:
+            sources.append((keys[index], debit))
+    if len(sources) != 1:
+        return None, "sol_source_not_unique"
+    sol_source, debit = sources[0]
+    destinations = [
+        keys[index]
+        for index in range(len(keys))
+        if raw_post[index] - raw_pre[index] == debit
+    ]
+    if len(destinations) != 1:
+        return None, "sol_destination_not_unique"
+    return (sol_source, destinations[0]), None
+
+
+def propose_migration_context(
+    tx: Any, expected_pool: Any, base_mint: Any
+) -> tuple[Optional[MigrationContext], Optional[str]]:
+    """Derive a candidate ``MigrationContext`` from a pool's creation transaction.
+
+    ``expected_pool`` and ``base_mint`` are the two identities a screener already
+    has (the pool being examined and its non-WSOL mint). The LP mint/account and
+    the base-token and SOL source/destination accounts are derived from the
+    transaction structure. Returns ``(context, None)`` on success or
+    ``(None, reason)`` when the transaction is malformed or any role is
+    ambiguous. The returned context is a candidate for
+    ``verify_migration_evidence``; it is not itself a verdict.
+    """
+    if not _is_pubkey(expected_pool) or not _is_pubkey(base_mint) or base_mint == WSOL_MINT:
+        return None, "invalid_pool_or_base_mint"
+    try:
+        message, meta, error = _transaction_parts(tx)
+        if error:
+            return None, error
+        assert message is not None and meta is not None
+        keys, error = _account_keys(message, meta)
+        if error:
+            return None, error
+        if expected_pool not in set(keys):
+            return None, "expected_pool_absent"
+        outer, groups, error = _instruction_groups(message, meta, keys)
+        if error:
+            return None, error
+
+        lp_pair, error = _derive_lp_pair(outer, groups, base_mint)
+        if error:
+            return None, error
+        base_flow, error = _derive_base_flow(meta, keys, base_mint)
+        if error:
+            return None, error
+        sol_flow, error = _derive_sol_flow(meta, keys)
+        if error:
+            return None, error
+    except Exception:
+        return None, "unexpected_input_error"
+
+    assert lp_pair is not None and base_flow is not None and sol_flow is not None
+    context = MigrationContext(
+        expected_pool=expected_pool,
+        lp_mint=lp_pair[0],
+        lp_account=lp_pair[1],
+        base_source=base_flow[0],
+        base_destination=base_flow[1],
+        sol_source=sol_flow[0],
+        sol_destination=sol_flow[1],
+    )
+    return context, None
+
+
+def screen_pool(
+    tx: Any,
+    expected_pool: Any,
+    base_mint: Any,
+    lp_account_states: Optional[Iterable[LpAccountState]] = None,
+) -> MigrationEvidenceVerdict:
+    """Derive a candidate context from ``tx`` and verify it, fail-closed.
+
+    Convenience wrapper for the screening case where only the pool address and
+    its mint are known in advance. Derivation ambiguity yields a verdict whose
+    ``failed_check`` is ``"derive:<reason>"``; otherwise the strict verifier's
+    verdict is returned unchanged.
+    """
+    context, reason = propose_migration_context(tx, expected_pool, base_mint)
+    if context is None:
+        evidence = _base_evidence(base_mint, None)
+        evidence["derive_failed_reason"] = reason
+        return MigrationEvidenceVerdict(
+            EVIDENCE_NOT_ESTABLISHED, f"derive:{reason}", evidence
+        )
+    return verify_migration_evidence(tx, base_mint, context, lp_account_states)

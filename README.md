@@ -1,12 +1,24 @@
 # pumpswap-graduation-provenance
 
-An offline reference implementation for evaluating a fixed set of bound
-pump.fun-to-PumpSwap migration-evidence predicates in a parsed Solana
-transaction.
+Tell a genuine pump.fun graduation apart from a **seeded pool** that only looks
+like one, by checking a pool's creation transaction rather than its appearance.
 
-The caller supplies the parsed transaction, expected account identities, and
+When a pump.fun token finishes its bonding curve, its SOL migrates into a new
+PumpSwap pool. A pool that appears already deep in SOL looks like that event —
+but the same shape is produced by funding a wallet and calling PumpSwap
+`CreatePool` directly, with no pump.fun program involved. The creator holds the
+LP and can withdraw the pool later. [REPORT.md](REPORT.md) shows, from a sample
+of drained pools, why the obvious pre-entry filters (seed size, funding recency,
+creator/funder blocklists) do not separate the two cases — which is why this
+repository checks provenance instead.
+
+This is an offline reference implementation of a fixed set of bound
+pump.fun-to-PumpSwap migration-evidence predicates over a parsed Solana
+transaction. The caller supplies the parsed transaction, account identities, and
 separately obtained LP-account state. A matched result means only that every
-implemented predicate matched those inputs. The module makes no network calls.
+implemented predicate matched those inputs. The module makes no network calls,
+constructs no transactions, selects or ranks no pools, and makes no safety or
+trading judgement.
 
 ## Contents
 
@@ -86,6 +98,37 @@ The public result names an evidence match, not protocol-level authentication.
 It does not establish that the transaction is canonical, determine intent,
 assess safety or future behaviour, or recommend an action.
 
+## Screening an unknown pool
+
+`verify_migration_evidence` requires every migration account up front, which is
+correct for the strict check but assumes you already know the LP mint, the LP
+account, and the base-token and SOL source/destination accounts. A screener
+examining a new pool knows only the two facts on the pool account itself: the
+pool address and its non-WSOL mint.
+
+`screen_pool` closes that gap. It derives the remaining accounts *structurally*
+from the transaction — the LP mint/burn pair, the two base-mint balance moves,
+and the large bound SOL debit with its matching credit — refuses when any role
+is ambiguous, and then hands the derived context straight to
+`verify_migration_evidence`.
+
+```python
+from graduation_provenance import screen_pool, LpAccountState
+
+result = screen_pool(
+    parsed_creation_tx,
+    expected_pool=pool_address,      # the pool you are screening
+    base_mint=pool_base_mint,        # its non-WSOL mint
+    lp_account_states=[LpAccountState(...)],  # obtained separately, as above
+)
+```
+
+The derivation is a convenience, not a second source of truth. Its output is
+only a candidate context; the strict verifier re-binds and re-checks the whole
+structure, so a wrong derivation fails closed rather than producing a match.
+When derivation itself cannot resolve a role, the verdict's `failed_check` is
+prefixed `derive:` (for example `derive:lp_pair_not_found`).
+
 ## Tests
 
 ```text
@@ -108,6 +151,13 @@ CI runs the same suite on Python 3.11 and 3.13.
   predicates, not calibrated performance estimates.
 - The datasets do not contain the transaction evidence required by the
   verifier and do not establish random or exhaustive sampling.
+- `screen_pool`'s derivation resolves each account role only when it is
+  unambiguous in the transaction and does not rank candidates by magnitude;
+  where a role is ambiguous it fails closed. The strict verifier remains the
+  authority, so a mis-derived account cannot yield a match.
+- Both the verifier and the screening path are exercised against synthetic
+  transaction fixtures only. They encode the intended decision; they have not
+  been run against a labelled corpus of live transactions in this repository.
 - Nothing here supports a population-frequency, classification, execution, or
   economic claim.
 
