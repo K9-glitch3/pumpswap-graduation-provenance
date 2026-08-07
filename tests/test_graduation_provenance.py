@@ -1,821 +1,445 @@
-"""Adversarial tests for the offline, pool-bound migration evidence predicate."""
+"""Adversarial unit tests for the pool-authenticated verifier."""
 
+from __future__ import annotations
+
+import copy
 import unittest
 from dataclasses import replace
 
 from graduation_provenance import (
     EVIDENCE_MATCHED,
     EVIDENCE_NOT_ESTABLISHED,
+    PUMP_FUN_PROGRAMS,
     PUMPSWAP_AMM_PROGRAM,
-    WSOL_MINT,
+    TOKEN_2022_PROGRAM,
+    TOKEN_PROGRAM,
     LpAccountState,
     MigrationContext,
+    PoolAccountEvidence,
+    build_evidence,
+    propose_migration_context,
+    screen_pool,
     verify_migration_evidence,
 )
-
-PUMP_FUN = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
-BASE_MINT = "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"
-LP_MINT = "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"
-LP_ACCOUNT = "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
-BASE_SOURCE = "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq"
-BASE_DESTINATION = "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY"
-SOL_SOURCE = "QWmroo4YnnMqYW3cnxWkFdaTxGD3P7vMSzwMHGbUzwF"
-EXPECTED_POOL = "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx"
-SOL_DESTINATION = "p2Yicb86aZig616Eav2VWG9vuXR5mEqhtzshZYBxzsV"
-TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-OTHER_PROGRAM = "YMN9Qj5jPNp7j14VPcML1B6xGgcPWVZUGLFU3Mnyfaf"
-DIFFERENT_POOL = "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN"
-UNRELATED_MINT = "gBxS1f6uyyGPuW5MzGBukidSb71jdsCb5fZaoSzULE5"
-UNRELATED_ACCOUNT = "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn"
-
-STATIC_KEYS = [
-    PUMP_FUN,
+from tests.synthetic_migration import (
+    BASE_AMOUNT,
+    BASE_CURVE,
     BASE_MINT,
-    BASE_SOURCE,
-    BASE_DESTINATION,
-    EXPECTED_POOL,
-    LP_MINT,
     LP_ACCOUNT,
-    SOL_DESTINATION,
-    TOKEN_PROGRAM,
-]
-ALL_KEYS = STATIC_KEYS + [SOL_SOURCE, PUMPSWAP_AMM_PROGRAM]
-BOUND_ACCOUNTS = [
-    EXPECTED_POOL,
-    BASE_MINT,
     LP_MINT,
-    LP_ACCOUNT,
-    BASE_SOURCE,
-    BASE_DESTINATION,
-    SOL_SOURCE,
-    SOL_DESTINATION,
-]
+    POOL,
+    make_bundle,
+)
 
 
-def _index(key):
-    return ALL_KEYS.index(key)
-
-
-def _context():
-    return MigrationContext(
-        expected_pool=EXPECTED_POOL,
-        lp_mint=LP_MINT,
-        lp_account=LP_ACCOUNT,
-        base_source=BASE_SOURCE,
-        base_destination=BASE_DESTINATION,
-        sol_source=SOL_SOURCE,
-        sol_destination=SOL_DESTINATION,
-    )
-
-
-def _mint_to(amount="500", mint=LP_MINT, account=LP_ACCOUNT):
-    return {
-        "program": "spl-token",
-        "programId": TOKEN_PROGRAM,
-        "stackHeight": 3,
-        "parsed": {"type": "mintTo", "info": {"mint": mint, "account": account, "amount": amount}},
-    }
-
-
-def _burn(amount="500", mint=LP_MINT, account=LP_ACCOUNT):
-    return {
-        "program": "spl-token",
-        "programId": TOKEN_PROGRAM,
-        "stackHeight": 3,
-        "parsed": {"type": "burn", "info": {"mint": mint, "account": account, "amount": amount}},
-    }
-
-
-def _pumpswap_instruction(accounts=None):
-    if accounts is None:
-        accounts = list(BOUND_ACCOUNTS)
-    return {
-        "programId": PUMPSWAP_AMM_PROGRAM,
-        "accounts": accounts,
-        "data": "1",
-        "stackHeight": 2,
-    }
-
-
-def _matching_tx():
-    """Synthetic parsed transaction with one account-bound CPI group."""
-    pre_balances = [0] * len(ALL_KEYS)
-    post_balances = [0] * len(ALL_KEYS)
-    pre_balances[_index(SOL_SOURCE)] = 85_000_000_000
-    post_balances[_index(SOL_DESTINATION)] = 85_000_000_000
-    return {
-        "slot": 100,
-        "transaction": {
-            "message": {
-                "accountKeys": [{"pubkey": key} if index == 0 else key for index, key in enumerate(STATIC_KEYS)],
-                "instructions": [
-                    {
-                        "programId": PUMP_FUN,
-                        "accounts": list(BOUND_ACCOUNTS),
-                        "data": "1",
-                    }
-                ],
-            }
-        },
-        "meta": {
-            "err": None,
-            "loadedAddresses": {
-                "writable": [{"pubkey": SOL_SOURCE}],
-                "readonly": [PUMPSWAP_AMM_PROGRAM],
-            },
-            "preBalances": pre_balances,
-            "postBalances": post_balances,
-            "preTokenBalances": [
-                {
-                    "accountIndex": _index(BASE_SOURCE),
-                    "mint": BASE_MINT,
-                    "uiTokenAmount": {"amount": "1000"},
-                }
-            ],
-            "postTokenBalances": [
-                {
-                    "accountIndex": _index(BASE_SOURCE),
-                    "mint": BASE_MINT,
-                    "uiTokenAmount": {"amount": "0"},
-                },
-                {
-                    "accountIndex": _index(BASE_DESTINATION),
-                    "mint": BASE_MINT,
-                    "uiTokenAmount": {"amount": "1000"},
-                },
-            ],
-            "innerInstructions": [
-                {
-                    "index": 0,
-                    "instructions": [_pumpswap_instruction(), _mint_to(), _burn()],
-                }
-            ],
-        },
-    }
-
-
-def _lp_proof(destination_closed=True, lp_supply_zero=True):
-    return [
-        LpAccountState(
-            lp_mint=LP_MINT,
-            destination=LP_ACCOUNT,
-            destination_closed=destination_closed,
-            lp_supply_zero=lp_supply_zero,
-        )
-    ]
-
-
-_DEFAULT_TX = object()
-_DEFAULT_CONTEXT = object()
-_DEFAULT_STATES = object()
+_DEFAULT = object()
 
 
 def _verify(
-    tx=_DEFAULT_TX,
-    *,
-    base_mint=BASE_MINT,
-    context=_DEFAULT_CONTEXT,
-    states=_DEFAULT_STATES,
+    bundle, *, context=_DEFAULT, states=_DEFAULT, pool=_DEFAULT, tx=_DEFAULT
 ):
     return verify_migration_evidence(
-        _matching_tx() if tx is _DEFAULT_TX else tx,
-        base_mint,
-        _context() if context is _DEFAULT_CONTEXT else context,
-        _lp_proof() if states is _DEFAULT_STATES else states,
+        bundle["tx"] if tx is _DEFAULT else tx,
+        BASE_MINT,
+        bundle["context"] if context is _DEFAULT else context,
+        bundle["states"] if states is _DEFAULT else states,
+        bundle["pool"] if pool is _DEFAULT else pool,
     )
 
 
-class BoundEvidenceMatchTests(unittest.TestCase):
-    def test_all_bound_evidence_matches(self):
-        verdict = _verify()
+def _inner(bundle):
+    return bundle["tx"]["meta"]["innerInstructions"][0]["instructions"]
+
+
+def _remove_operation(bundle, operation):
+    _inner(bundle)[:] = [
+        instruction
+        for instruction in _inner(bundle)
+        if (instruction.get("parsed") or {}).get("type") != operation
+    ]
+
+
+class AuthenticatedMatchTests(unittest.TestCase):
+    def test_complete_synthetic_frame_matches(self):
+        bundle = make_bundle()
+        verdict = _verify(bundle)
         self.assertEqual(verdict.verdict, EVIDENCE_MATCHED)
         self.assertIsNone(verdict.failed_check)
-        self.assertTrue(verdict.is_match)
-        self.assertEqual(verdict.evidence["bound_migration_group_indexes"], [0])
-
-    def test_loaded_addresses_resolve_for_program_accounts_and_balances(self):
-        verdict = _verify()
-        self.assertEqual(verdict.verdict, EVIDENCE_MATCHED)
-        self.assertEqual(verdict.evidence["sol_flow"]["sol_source"], SOL_SOURCE)
+        self.assertEqual(verdict.evidence["migration_frame_count"], 1)
         self.assertEqual(
-            verdict.evidence["sol_flow"]["sol_source_debit_lamports"], 85_000_000_000
+            verdict.evidence["migration_operations"]["base_amount"], BASE_AMOUNT
         )
 
-    def test_loaded_program_id_index_and_compiled_accounts_resolve(self):
-        tx = _matching_tx()
-        instruction = tx["meta"]["innerInstructions"][0]["instructions"][0]
-        instruction.pop("programId")
-        instruction["programIdIndex"] = _index(PUMPSWAP_AMM_PROGRAM)
-        instruction["accounts"] = [
-            _index(account)
-            for account in BOUND_ACCOUNTS
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.verdict, EVIDENCE_MATCHED)
+    def test_derive_then_verify_agrees_with_explicit_context(self):
+        bundle = make_bundle()
+        context, reason = propose_migration_context(
+            bundle["tx"], POOL, BASE_MINT, bundle["pool"]
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(context, bundle["context"])
+        screened = screen_pool(
+            bundle["tx"],
+            POOL,
+            BASE_MINT,
+            bundle["states"],
+            bundle["pool"],
+        )
+        self.assertEqual(screened.verdict, _verify(bundle).verdict)
 
-    def test_pre_only_source_token_account_is_a_real_negative_flow(self):
-        tx = _matching_tx()
-        tx["meta"]["postTokenBalances"] = tx["meta"]["postTokenBalances"][1:]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.verdict, EVIDENCE_MATCHED)
-        self.assertEqual(verdict.evidence["token_flow"]["source_delta"], -1000)
+    def test_token_2022_rpc_label_is_not_treated_as_program_identity(self):
+        bundle = make_bundle()
+        for instruction in _inner(bundle):
+            if instruction.get("programId") == TOKEN_2022_PROGRAM:
+                instruction["program"] = "spl-token"
+        self.assertTrue(_verify(bundle).is_match)
+
+    def test_impossible_spl_program_label_fails_closed(self):
+        bundle = make_bundle()
+        _inner(bundle)[0]["program"] = "system"
+        self.assertEqual(_verify(bundle).failed_check, "transaction_shape")
+
+    def test_loaded_addresses_are_part_of_the_resolved_key_space(self):
+        bundle = make_bundle()
+        keys = bundle["tx"]["transaction"]["message"]["accountKeys"]
+        keys.remove(PUMPSWAP_AMM_PROGRAM)
+        bundle["tx"]["meta"]["loadedAddresses"] = {
+            "writable": [],
+            "readonly": [PUMPSWAP_AMM_PROGRAM],
+        }
+        self.assertTrue(_verify(bundle).is_match)
+
+    def test_compiled_program_and_account_indexes_resolve(self):
+        bundle = make_bundle()
+        message = bundle["tx"]["transaction"]["message"]
+        keys = message["accountKeys"]
+        create_pool = _inner(bundle)[2]
+        create_pool["programIdIndex"] = keys.index(create_pool.pop("programId"))
+        create_pool["accounts"] = [keys.index(account) for account in create_pool["accounts"]]
+        self.assertTrue(_verify(bundle).is_match)
 
 
-class OrderedFailClosedTests(unittest.TestCase):
-    def test_missing_lp_proof_fails_closed(self):
-        for states in (None, []):
-            with self.subTest(states=states):
-                verdict = _verify(states=states)
-                self.assertEqual(verdict.verdict, EVIDENCE_NOT_ESTABLISHED)
-                self.assertEqual(verdict.failed_check, "lp_account_closed_supply_zero")
+class SubtreeConservationTests(unittest.TestCase):
+    def test_exactly_eighty_sol_passes_and_one_lamport_less_fails(self):
+        exact = make_bundle(quote_amount=80_000_000_000)
+        self.assertTrue(_verify(exact).is_match)
+        below = make_bundle(quote_amount=79_999_999_999)
+        verdict = _verify(below)
+        self.assertEqual(verdict.failed_check, "migration_sol_flow")
 
-    def test_lp_account_must_be_closed_and_supply_zero(self):
-        for closed, zero in ((False, True), (True, False)):
-            with self.subTest(closed=closed, zero=zero):
-                verdict = _verify(states=_lp_proof(closed, zero))
-                self.assertEqual(verdict.failed_check, "lp_account_closed_supply_zero")
+    def test_bound_curve_debit_has_its_own_eighty_sol_floor(self):
+        exact = make_bundle(quote_amount=80_000_000_000)
+        keys = exact["tx"]["transaction"]["message"]["accountKeys"]
+        curve_index = keys.index(BASE_CURVE)
+        exact["tx"]["meta"]["preBalances"][curve_index] = 90_000_000_000
+        exact["tx"]["meta"]["postBalances"][curve_index] = 10_000_000_000
+        self.assertTrue(_verify(exact).is_match)
 
-    def test_lp_state_flags_must_be_exact_booleans(self):
-        states = [LpAccountState(LP_MINT, LP_ACCOUNT, "false", "false")]
-        verdict = _verify(states=states)
-        self.assertEqual(verdict.verdict, EVIDENCE_NOT_ESTABLISHED)
-        self.assertEqual(verdict.failed_check, "lp_account_closed_supply_zero")
+        below = make_bundle(quote_amount=80_000_000_000)
+        below["tx"]["meta"]["preBalances"][curve_index] = 90_000_000_000
+        below["tx"]["meta"]["postBalances"][curve_index] = 10_000_000_001
+        verdict = _verify(below)
+        self.assertEqual(verdict.failed_check, "migration_sol_flow")
+        self.assertEqual(
+            verdict.evidence["migration_operations"]["bound_curve_debit_lamports"],
+            79_999_999_999,
+        )
 
-    def test_non_iterable_or_wrong_state_items_fail_without_raising(self):
-        for states in (123, "not-a-state", [object()]):
-            with self.subTest(states=states):
-                verdict = _verify(states=states)
-                self.assertEqual(verdict.failed_check, "lp_account_closed_supply_zero")
+    def test_bound_curve_debit_must_cover_create_pool_quote_transfer(self):
+        bundle = make_bundle()
+        keys = bundle["tx"]["transaction"]["message"]["accountKeys"]
+        curve_index = keys.index(BASE_CURVE)
+        bundle["tx"]["meta"]["preBalances"][curve_index] = 90_000_000_000
+        bundle["tx"]["meta"]["postBalances"][curve_index] = 10_000_000_000
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "migration_sol_flow")
 
-    def test_malformed_or_duplicate_state_cannot_hide_beside_valid_proof(self):
+    def test_missing_curve_to_create_pool_input_transfer_fails(self):
+        bundle = make_bundle()
+        del _inner(bundle)[0]
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "base_mint_migrated")
+
+    def test_noncanonical_bound_amount_is_malformed_evidence(self):
+        bundle = make_bundle()
+        _inner(bundle)[0]["parsed"]["info"]["tokenAmount"]["amount"] = "01"
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "migration_operations_well_formed")
+        self.assertEqual(
+            verdict.evidence["migration_operations"]["invalid_bound_operation_count"],
+            1,
+        )
+
+    def test_create_pool_transfer_must_match_instruction_amount(self):
+        bundle = make_bundle()
+        _inner(bundle)[3]["parsed"]["info"]["tokenAmount"]["amount"] = str(
+            BASE_AMOUNT - 1
+        )
+        self.assertEqual(_verify(bundle).failed_check, "base_mint_migrated")
+
+    def test_sync_native_is_required_in_the_migration_frame(self):
+        bundle = make_bundle()
+        _remove_operation(bundle, "syncNative")
+        self.assertEqual(_verify(bundle).failed_check, "migration_sol_flow")
+
+    def test_transaction_global_quote_transfer_cannot_substitute_for_cp_child(self):
+        bundle = make_bundle()
+        # Moving the otherwise exact transfer to stack 2 makes it a migration
+        # child rather than a CreatePool child.
+        _inner(bundle)[4]["stackHeight"] = 2
+        self.assertEqual(_verify(bundle).failed_check, "migration_sol_flow")
+
+    def test_create_pool_role_swap_breaks_pool_authentication_binding(self):
+        bundle = make_bundle()
+        accounts = _inner(bundle)[2]["accounts"]
+        accounts[9], accounts[10] = accounts[10], accounts[9]
+        self.assertEqual(_verify(bundle).failed_check, "migration_create_pool_binding")
+
+    def test_migration_role_swap_breaks_create_pool_binding(self):
+        bundle = make_bundle()
+        accounts = bundle["tx"]["transaction"]["message"]["instructions"][0]["accounts"]
+        accounts[17], accounts[18] = accounts[18], accounts[17]
+        self.assertEqual(_verify(bundle).failed_check, "migration_create_pool_binding")
+
+    def test_fixed_global_and_event_roles_are_not_merely_co_mentioned(self):
+        for migration_index in (0, 25):
+            bundle = make_bundle()
+            accounts = bundle["tx"]["transaction"]["message"]["instructions"][0]["accounts"]
+            accounts[migration_index] = BASE_CURVE
+            with self.subTest(migration_index=migration_index):
+                self.assertEqual(
+                    _verify(bundle).failed_check, "migration_create_pool_binding"
+                )
+
+        bundle = make_bundle()
+        migration = bundle["tx"]["transaction"]["message"]["instructions"][0]
+        migration["accounts"][14] = BASE_CURVE
+        _inner(bundle)[2]["accounts"][1] = BASE_CURVE
+        self.assertEqual(_verify(bundle).failed_check, "migration_create_pool_binding")
+
+    def test_multiple_complete_frames_are_ambiguous(self):
+        bundle = make_bundle()
+        message = bundle["tx"]["transaction"]["message"]
+        message["instructions"].append(copy.deepcopy(message["instructions"][0]))
+        second_group = copy.deepcopy(bundle["tx"]["meta"]["innerInstructions"][0])
+        second_group["index"] = 1
+        bundle["tx"]["meta"]["innerInstructions"].append(second_group)
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "migration_create_pool_binding")
+        self.assertEqual(verdict.evidence["migration_frame_count"], 2)
+
+
+class LpDestructionTests(unittest.TestCase):
+    def test_synthetic_programs_and_authentic_pool_without_burn_fails_only_lp_gate(self):
+        """Synthetic discriminator: all gates through WSOL flow pass; burn is absent."""
+        bundle = make_bundle()
+        _remove_operation(bundle, "burn")
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
+        self.assertTrue(verdict.evidence["pool_authenticated"])
+        self.assertEqual(verdict.evidence["migration_frame_count"], 1)
+        self.assertTrue(verdict.evidence["migration_operations"]["base_migration_flow"])
+        self.assertTrue(verdict.evidence["migration_operations"]["wsol_migration_flow"])
+
+    def test_burn_must_be_a_direct_migration_child(self):
+        bundle = make_bundle()
+        burn = next(
+            instruction
+            for instruction in _inner(bundle)
+            if (instruction.get("parsed") or {}).get("type") == "burn"
+        )
+        burn["stackHeight"] = 3
+        self.assertEqual(_verify(bundle).failed_check, "lp_mint_and_burn")
+
+    def test_lp_account_close_is_required_in_the_same_frame(self):
+        bundle = make_bundle()
+        _remove_operation(bundle, "closeAccount")
+        self.assertEqual(_verify(bundle).failed_check, "lp_account_closed_in_frame")
+
+    def test_lp_amounts_must_be_matching_positive_canonical_u64s(self):
+        for amount in ("0", "01", "-1", str(1 << 64)):
+            with self.subTest(amount=amount):
+                bundle = make_bundle()
+                burn = next(
+                    instruction
+                    for instruction in _inner(bundle)
+                    if (instruction.get("parsed") or {}).get("type") == "burn"
+                )
+                burn["parsed"]["info"]["amount"] = amount
+                self.assertEqual(
+                    _verify(bundle).failed_check, "migration_operations_well_formed"
+                )
+
+    def test_external_lp_proof_is_fail_closed(self):
+        bundle = make_bundle()
         cases = (
-            _lp_proof() + [object()],
-            _lp_proof() + _lp_proof(),
+            None,
+            [],
+            [replace(bundle["states"][0], destination_closed=False)],
+            [replace(bundle["states"][0], lp_supply_zero=False)],
+            [replace(bundle["states"][0], destination_closed=1)],
+            [replace(bundle["states"][0], destination=POOL)],
+            bundle["states"] * 2,
         )
         for states in cases:
             with self.subTest(states=states):
-                verdict = _verify(states=states)
-                self.assertEqual(
-                    verdict.failed_check, "lp_account_closed_supply_zero"
-                )
+                verdict = _verify(bundle, states=states)
+                self.assertEqual(verdict.failed_check, "lp_account_closed_supply_zero")
 
-    def test_missing_pump_fun_program_fails_before_other_program_checks(self):
-        tx = _matching_tx()
-        tx["transaction"]["message"]["instructions"][0][
-            "programId"
-        ] = PUMPSWAP_AMM_PROGRAM
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "pump_fun_program")
+    def test_lp_state_subclass_is_rejected(self):
+        class StatefulLp(LpAccountState):
+            pass
 
-    def test_missing_pumpswap_program_fails(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"] = [
-            {
-                "programId": TOKEN_PROGRAM,
-                "accounts": [],
-                "data": "1",
-                "stackHeight": 2,
-            },
-            _mint_to(),
-            _burn(),
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "pumpswap_amm")
-
-    def test_small_bound_sol_move_fails(self):
-        tx = _matching_tx()
-        tx["meta"]["preBalances"][_index(SOL_SOURCE)] = 5_000_000_000
-        tx["meta"]["postBalances"][_index(SOL_DESTINATION)] = 5_000_000_000
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "migration_sol_flow")
-
-    def test_positive_only_base_flow_fails(self):
-        tx = _matching_tx()
-        tx["meta"]["preTokenBalances"] = []
-        tx["meta"]["postTokenBalances"] = tx["meta"]["postTokenBalances"][1:]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "base_mint_migrated")
-
-    def test_lp_minted_without_bound_burn_fails(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"] = [
-            _pumpswap_instruction(),
-            _mint_to(),
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_lp_amounts_must_be_matching_positive_integers(self):
-        cases = (
-            ("500", "499"),
-            ("0500", "500"),
-            ("0500", "0500"),
-            ("0", "0"),
-            ("-1", "-1"),
-            ("five", "five"),
-            (str(1 << 64), str(1 << 64)),
-            (500, 500),
-            (None, None),
-            (True, True),
-            ("", ""),
-        )
-        for minted, burned in cases:
-            with self.subTest(minted=minted, burned=burned):
-                tx = _matching_tx()
-                tx["meta"]["innerInstructions"][0]["instructions"] = [
-                    _pumpswap_instruction(),
-                    _mint_to(minted),
-                    _burn(burned),
-                ]
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_multiple_matching_lp_pairs_are_rejected_as_ambiguous(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"].extend(
-            [_mint_to("600"), _burn("600")]
-        )
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_parsed_lp_instructions_reject_mixed_account_encoding(self):
-        tx = _matching_tx()
-        for instruction in tx["meta"]["innerInstructions"][0]["instructions"][1:]:
-            instruction["accounts"] = [BASE_MINT, BASE_SOURCE]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_lp_operations_must_come_from_an_spl_token_program(self):
-        tx = _matching_tx()
-        for instruction in tx["meta"]["innerInstructions"][0]["instructions"][1:]:
-            instruction["programId"] = PUMP_FUN
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_malformed_lp_operation_cannot_hide_beside_a_valid_pair(self):
-        tx = _matching_tx()
-        malformed = _mint_to()
-        malformed["parsed"]["info"].pop("amount")
-        tx["meta"]["innerInstructions"][0]["instructions"].append(malformed)
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_wsol_mint_and_burn_are_not_bound_lp_evidence(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"] = [
-            _pumpswap_instruction(),
-            _mint_to(mint=WSOL_MINT),
-            _burn(mint=WSOL_MINT),
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-
-class InstructionGroupBindingTests(unittest.TestCase):
-    def test_multiple_matching_groups_are_rejected_as_ambiguous(self):
-        tx = _matching_tx()
-        tx["transaction"]["message"]["instructions"].append(
-            {
-                "programId": PUMP_FUN,
-                "accounts": list(BOUND_ACCOUNTS),
-                "data": "1",
-            }
-        )
-        tx["meta"]["innerInstructions"].append(
-            {
-                "index": 1,
-                "instructions": [_pumpswap_instruction(), _mint_to(), _burn()],
-            }
-        )
-        verdict = _verify(tx)
+        bundle = make_bundle()
+        state = StatefulLp(LP_MINT, LP_ACCOUNT, True, True)
         self.assertEqual(
-            verdict.failed_check, "bound_migration_instruction_group"
+            _verify(bundle, states=[state]).failed_check,
+            "lp_account_closed_supply_zero",
         )
 
-    def test_lp_operations_must_follow_the_bound_pumpswap_cpi_in_order(self):
-        before_mint = _mint_to()
-        before_burn = _burn()
-        before_mint["stackHeight"] = 2
-        before_burn["stackHeight"] = 2
+
+class PoolAuthenticationTests(unittest.TestCase):
+    def test_wrong_pool_false_positive_reproducer_is_closed(self):
+        bundle = make_bundle()
+        verdict = screen_pool(
+            bundle["tx"],
+            TOKEN_PROGRAM,
+            BASE_MINT,
+            bundle["states"],
+            bundle["pool"],
+        )
+        self.assertEqual(verdict.verdict, EVIDENCE_NOT_ESTABLISHED)
+        self.assertEqual(verdict.failed_check, "derive:pool_not_authenticated")
+
+    def test_pool_address_owner_bytes_and_slot_are_all_bound(self):
+        bundle = make_bundle()
         cases = (
-            [before_mint, before_burn, _pumpswap_instruction()],
-            [_pumpswap_instruction(), _burn(), _mint_to()],
+            (replace(bundle["pool"], address=TOKEN_PROGRAM), "pool_authenticated"),
+            (replace(bundle["pool"], owner=TOKEN_PROGRAM), "pool_account"),
+            (replace(bundle["pool"], data_base64="not base64"), "pool_authenticated"),
+            (replace(bundle["pool"], context_slot=99), "pool_authenticated"),
+            (replace(bundle["pool"], context_slot=True), "pool_account"),
         )
-        for instructions in cases:
-            with self.subTest(instructions=instructions):
-                tx = _matching_tx()
-                tx["meta"]["innerInstructions"][0]["instructions"] = instructions
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
+        for pool, failed_check in cases:
+            with self.subTest(pool=pool):
+                self.assertEqual(_verify(bundle, pool=pool).failed_check, failed_check)
 
-    def test_lp_mint_must_be_a_stack_descendant_of_pumpswap(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"][1][
-            "stackHeight"
-        ] = 2
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
+    def test_pool_evidence_subclass_is_rejected(self):
+        class StatefulPool(PoolAccountEvidence):
+            pass
 
-    def test_lp_burn_must_be_a_stack_descendant_of_pumpswap(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"][2][
-            "stackHeight"
-        ] = 2
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
+        bundle = make_bundle()
+        pool = bundle["pool"]
+        hostile = StatefulPool(pool.address, pool.owner, pool.data_base64, pool.context_slot)
+        self.assertEqual(_verify(bundle, pool=hostile).failed_check, "pool_account")
 
-    def test_impossible_inner_stack_transitions_are_malformed(self):
-        cases = ((1, 2, 2), (2, 99, 99))
-        for pump_height, mint_height, burn_height in cases:
-            with self.subTest(
-                pump_height=pump_height,
-                mint_height=mint_height,
-            ):
-                tx = _matching_tx()
-                instructions = tx["meta"]["innerInstructions"][0][
-                    "instructions"
-                ]
-                instructions[0]["stackHeight"] = pump_height
-                instructions[1]["stackHeight"] = mint_height
-                instructions[2]["stackHeight"] = burn_height
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_missing_pumpswap_stack_height_fails_closed(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"][0].pop(
-            "stackHeight"
+    def test_pool_snapshot_for_another_base_mint_fails(self):
+        bundle = make_bundle()
+        verdict = verify_migration_evidence(
+            bundle["tx"], TOKEN_PROGRAM, bundle["context"], bundle["states"], bundle["pool"]
         )
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_pumpswap_cpi_must_reference_every_pool_bound_account(self):
-        required = BOUND_ACCOUNTS
-        for omitted in required:
-            with self.subTest(omitted=omitted):
-                tx = _matching_tx()
-                accounts = [account for account in required if account != omitted]
-                tx["meta"]["innerInstructions"][0]["instructions"][0] = _pumpswap_instruction(
-                    accounts
-                )
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "bound_migration_instruction_group")
-
-    def test_pump_fun_outer_instruction_must_reference_named_sources(self):
-        for omitted in BOUND_ACCOUNTS:
-            with self.subTest(omitted=omitted):
-                tx = _matching_tx()
-                tx["transaction"]["message"]["instructions"][0]["accounts"] = [
-                    account
-                    for account in BOUND_ACCOUNTS
-                    if account != omitted
-                ]
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "bound_migration_instruction_group")
-
-    def test_transaction_global_program_composition_is_rejected(self):
-        tx = _matching_tx()
-        tx["transaction"]["message"]["accountKeys"].append(OTHER_PROGRAM)
-        tx["meta"]["preBalances"].insert(len(STATIC_KEYS), 0)
-        tx["meta"]["postBalances"].insert(len(STATIC_KEYS), 0)
-        tx["transaction"]["message"]["instructions"] = [
-            {
-                "programId": PUMP_FUN,
-                "accounts": list(BOUND_ACCOUNTS),
-                "data": "1",
-            },
-            {"programId": OTHER_PROGRAM, "accounts": [], "data": "1"},
-        ]
-        tx["meta"]["innerInstructions"] = [
-            {
-                "index": 0,
-                "instructions": [
-                    {
-                        "programId": OTHER_PROGRAM,
-                        "accounts": [],
-                        "data": "1",
-                        "stackHeight": 2,
-                    },
-                    _mint_to(),
-                    _burn(),
-                ],
-            },
-            {
-                "index": 1,
-                "instructions": [
-                    _pumpswap_instruction(),
-                    _mint_to(),
-                    _burn(),
-                ],
-            },
-        ]
-        verdict = _verify(tx)
-        self.assertTrue(verdict.evidence["has_pump_fun_program"])
-        self.assertTrue(verdict.evidence["has_pumpswap_amm"])
-        self.assertEqual(verdict.failed_check, "bound_migration_instruction_group")
-
-    def test_lp_ops_in_a_different_inner_group_do_not_compose(self):
-        tx = _matching_tx()
-        tx["transaction"]["message"]["accountKeys"].append(OTHER_PROGRAM)
-        tx["meta"]["preBalances"].insert(len(STATIC_KEYS), 0)
-        tx["meta"]["postBalances"].insert(len(STATIC_KEYS), 0)
-        tx["transaction"]["message"]["instructions"].append(
-            {"programId": OTHER_PROGRAM, "accounts": [], "data": "1"}
-        )
-        tx["meta"]["innerInstructions"] = [
-            {"index": 0, "instructions": [_pumpswap_instruction()]},
-            {
-                "index": 1,
-                "instructions": [
-                    {
-                        "programId": OTHER_PROGRAM,
-                        "accounts": [],
-                        "data": "1",
-                        "stackHeight": 2,
-                    },
-                    _mint_to(),
-                    _burn(),
-                ],
-            },
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.evidence["bound_migration_group_indexes"], [0])
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_transaction_global_token_flows_do_not_substitute_for_bound_accounts(self):
-        tx = _matching_tx()
-        tx["meta"]["preTokenBalances"][0]["accountIndex"] = _index(LP_MINT)
-        tx["meta"]["postTokenBalances"][0]["accountIndex"] = _index(LP_MINT)
-        tx["meta"]["postTokenBalances"][1]["accountIndex"] = _index(LP_ACCOUNT)
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "base_mint_migrated")
-
-    def test_bound_base_flow_amounts_must_balance(self):
-        tx = _matching_tx()
-        tx["meta"]["postTokenBalances"][1]["uiTokenAmount"]["amount"] = "999"
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "base_mint_migrated")
-
-    def test_transaction_global_sol_debit_does_not_substitute_for_bound_source(self):
-        tx = _matching_tx()
-        tx["meta"]["preBalances"][_index(SOL_SOURCE)] = 0
-        tx["meta"]["preBalances"][_index(BASE_SOURCE)] = 85_000_000_000
-        verdict = _verify(tx)
-        self.assertTrue(verdict.evidence["sol_flow"]["major_sol_debits"])
-        self.assertEqual(verdict.failed_check, "migration_sol_flow")
-
-    def test_sol_credit_must_reach_the_bound_destination_in_full(self):
-        cases = (
-            (0, 85_000_000_000),
-            (84_000_000_000, 1_000_000_000),
-        )
-        for destination_credit, unrelated_credit in cases:
-            with self.subTest(destination_credit=destination_credit):
-                tx = _matching_tx()
-                tx["meta"]["postBalances"][_index(SOL_DESTINATION)] = (
-                    destination_credit
-                )
-                tx["meta"]["postBalances"][_index(LP_MINT)] = unrelated_credit
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "migration_sol_flow")
-
-    def test_lp_ops_for_another_mint_and_account_do_not_substitute(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"][0]["instructions"] = [
-            _pumpswap_instruction(),
-            _mint_to(mint=UNRELATED_MINT, account=UNRELATED_ACCOUNT),
-            _burn(mint=UNRELATED_MINT, account=UNRELATED_ACCOUNT),
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
+        self.assertEqual(verdict.failed_check, "pool_authenticated")
 
 
 class InputHardeningTests(unittest.TestCase):
     def test_none_and_non_dict_transaction_shapes_never_raise(self):
-        malformed = (None, [], "tx", 7, {"transaction": None}, {"transaction": {"message": None}})
-        for tx in malformed:
+        bundle = make_bundle()
+        for tx in (None, [], "tx", 7, {}, {"transaction": None}):
             with self.subTest(tx=tx):
-                verdict = _verify(tx)
+                verdict = _verify(bundle, tx=tx)
                 self.assertEqual(verdict.verdict, EVIDENCE_NOT_ESTABLISHED)
                 self.assertEqual(verdict.failed_check, "transaction_shape")
 
-    def test_failed_transaction_meta_is_rejected(self):
-        tx = _matching_tx()
-        tx["meta"]["err"] = {"InstructionError": [0, "Custom"]}
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_succeeded")
+    def test_oversized_numeric_strings_fail_without_big_integer_conversion(self):
+        bundle = make_bundle()
+        _inner(bundle)[5]["parsed"]["info"]["amount"] = "9" * 100_000
+        verdict = _verify(bundle)
+        self.assertEqual(verdict.failed_check, "migration_operations_well_formed")
 
-    def test_wsol_cannot_be_the_base_mint(self):
-        verdict = _verify(base_mint=WSOL_MINT)
-        self.assertEqual(verdict.failed_check, "base_mint")
+    def test_container_subclasses_are_rejected_before_they_can_switch(self):
+        class StatefulDict(dict):
+            pass
 
-    def test_malformed_base_mints_fail_without_raising(self):
-        for base_mint in (None, [], {}, True, 7, "", "not a pubkey"):
-            with self.subTest(base_mint=base_mint):
-                verdict = _verify(base_mint=base_mint)
-                self.assertEqual(verdict.failed_check, "base_mint")
+        bundle = make_bundle()
+        hostile = StatefulDict(bundle["tx"])
+        self.assertEqual(_verify(bundle, tx=hostile).failed_check, "transaction_shape")
 
-    def test_missing_empty_or_role_colliding_context_is_rejected(self):
-        invalid_contexts = (
-            None,
-            replace(_context(), expected_pool=""),
-            replace(_context(), expected_pool="not a pubkey"),
-            replace(_context(), expected_pool=LP_MINT),
-            replace(_context(), sol_source=BASE_SOURCE),
-        )
-        for context in invalid_contexts:
-            with self.subTest(context=context):
-                verdict = _verify(context=context)
-                self.assertEqual(verdict.failed_check, "migration_context")
+    def test_stateful_context_subclass_cannot_switch_mid_check(self):
+        class SwitchingContext(MigrationContext):
+            reads = 0
 
-    def test_hostile_context_subclass_cannot_escape_fail_closed_boundary(self):
-        class HostileContext(MigrationContext):
             def __getattribute__(self, name):
                 if name == "expected_pool":
-                    raise RuntimeError("hostile attribute")
+                    type(self).reads += 1
+                    if type(self).reads > 1:
+                        return TOKEN_PROGRAM
                 return super().__getattribute__(name)
 
-        ordinary = _context()
-        hostile = HostileContext(
-            ordinary.expected_pool,
-            ordinary.lp_mint,
-            ordinary.lp_account,
-            ordinary.base_source,
-            ordinary.base_destination,
-            ordinary.sol_source,
-            ordinary.sol_destination,
-        )
-        verdict = _verify(context=hostile)
-        self.assertEqual(verdict.verdict, EVIDENCE_NOT_ESTABLISHED)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
+        bundle = make_bundle()
+        c = bundle["context"]
+        hostile = SwitchingContext(*c.__dict__.values())
+        verdict = _verify(bundle, context=hostile)
+        self.assertEqual(verdict.failed_check, "migration_context")
+        self.assertEqual(SwitchingContext.reads, 0)
 
-    def test_context_accounts_must_exist_in_resolved_keys(self):
-        verdict = _verify(context=replace(_context(), expected_pool=DIFFERENT_POOL))
-        self.assertEqual(verdict.failed_check, "context_accounts")
+    def test_failed_transaction_is_rejected(self):
+        bundle = make_bundle()
+        bundle["tx"]["meta"]["err"] = {"InstructionError": [0, "Custom"]}
+        self.assertEqual(_verify(bundle).failed_check, "transaction_succeeded")
 
-    def test_missing_token_amount_is_malformed_not_fabricated_as_zero(self):
-        for ui_amount in (
+    def test_context_role_collisions_and_malformed_pubkeys_fail(self):
+        bundle = make_bundle()
+        contexts = (
             None,
-            {},
-            {"amount": None},
-            {"amount": True},
-            {"amount": 1000},
-            {"amount": "01000"},
-            {"amount": str(1 << 64)},
-        ):
-            with self.subTest(ui_amount=ui_amount):
-                tx = _matching_tx()
-                tx["meta"]["postTokenBalances"][0]["uiTokenAmount"] = ui_amount
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_duplicate_token_account_index_is_malformed(self):
-        tx = _matching_tx()
-        tx["meta"]["postTokenBalances"].append(
-            {
-                "accountIndex": _index(BASE_SOURCE),
-                "mint": UNRELATED_MINT,
-                "uiTokenAmount": {"amount": "1"},
-            }
+            replace(bundle["context"], expected_pool=""),
+            replace(bundle["context"], base_source=bundle["context"].sol_source),
+            replace(bundle["context"], lp_mint=BASE_MINT),
         )
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
+        for context in contexts:
+            with self.subTest(context=context):
+                self.assertEqual(_verify(bundle, context=context).failed_check, "migration_context")
 
-    def test_inner_instructions_none_is_safe_and_establishes_nothing(self):
-        tx = _matching_tx()
-        tx["meta"]["innerInstructions"] = None
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "pumpswap_amm")
-
-    def test_malformed_inner_instruction_containers_fail_shape(self):
-        for groups in ([None], [{"index": 0, "instructions": None}], [{"index": True, "instructions": []}]):
-            with self.subTest(groups=groups):
-                tx = _matching_tx()
-                tx["meta"]["innerInstructions"] = groups
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_present_outer_stack_height_must_be_null_or_one(self):
-        for value in ([], False, 0, 2):
-            with self.subTest(value=value):
-                tx = _matching_tx()
-                tx["transaction"]["message"]["instructions"][0][
-                    "stackHeight"
-                ] = value
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
-
-        for value in (None, 1):
-            with self.subTest(value=value):
-                tx = _matching_tx()
-                tx["transaction"]["message"]["instructions"][0][
-                    "stackHeight"
-                ] = value
-                self.assertTrue(_verify(tx).is_match)
-
-    def test_malformed_loaded_addresses_fail_shape(self):
-        bad_loaded = ([], {"writable": None}, {"readonly": [{}]})
-        for loaded in bad_loaded:
+    def test_malformed_loaded_addresses_fail_transaction_shape(self):
+        bundle = make_bundle()
+        for loaded in ([], {"writable": None}, {"readonly": [{}]}):
             with self.subTest(loaded=loaded):
-                tx = _matching_tx()
+                tx = copy.deepcopy(bundle["tx"])
                 tx["meta"]["loadedAddresses"] = loaded
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
+                self.assertEqual(_verify(bundle, tx=tx).failed_check, "transaction_shape")
 
-    def test_invalid_loaded_index_fails_shape(self):
-        tx = _matching_tx()
-        instruction = tx["meta"]["innerInstructions"][0]["instructions"][0]
-        instruction.pop("programId")
-        instruction["programIdIndex"] = 999
-        instruction["accounts"] = [
-            _index(account)
-            for account in BOUND_ACCOUNTS
-        ]
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
+    def test_impossible_stack_transition_fails_transaction_shape(self):
+        bundle = make_bundle()
+        _inner(bundle)[0]["stackHeight"] = 3
+        self.assertEqual(_verify(bundle).failed_check, "transaction_shape")
 
-    def test_bound_opaque_instruction_data_must_be_base58_and_nonempty(self):
-        cases = (
-            ([], "transaction_shape"),
-            ("0", "transaction_shape"),
-            ("", "bound_migration_instruction_group"),
+    def test_unsupported_pump_fun_program_fails_closed(self):
+        bundle = make_bundle()
+        unsupported = next(program for program in PUMP_FUN_PROGRAMS if program != bundle["tx"]["transaction"]["message"]["instructions"][0]["programId"])
+        keys = bundle["tx"]["transaction"]["message"]["accountKeys"]
+        keys.append(unsupported)
+        bundle["tx"]["meta"]["preBalances"].append(0)
+        bundle["tx"]["meta"]["postBalances"].append(0)
+        migration = bundle["tx"]["transaction"]["message"]["instructions"][0]
+        migration["programId"] = unsupported
+        migration["accounts"][-1] = unsupported
+        verdict = _verify(bundle)
+        self.assertTrue(verdict.evidence["has_pump_fun_program"])
+        self.assertEqual(verdict.failed_check, "migration_create_pool_binding")
+
+    def test_missing_pool_evidence_fails_closed(self):
+        bundle = make_bundle()
+        self.assertEqual(_verify(bundle, pool=None).failed_check, "pool_account")
+
+    def test_build_evidence_never_raises_on_hostile_iterable(self):
+        class HostileIterable:
+            def __iter__(self):
+                raise RuntimeError("do not escape")
+
+        bundle = make_bundle()
+        evidence = build_evidence(
+            bundle["tx"], BASE_MINT, bundle["context"], HostileIterable(), bundle["pool"]
         )
-        for data, failed_check in cases:
-            with self.subTest(data=data):
-                tx = _matching_tx()
-                tx["meta"]["innerInstructions"][0]["instructions"][0][
-                    "data"
-                ] = data
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, failed_check)
-
-    def test_program_and_account_reference_encodings_must_be_coherent(self):
-        tx = _matching_tx()
-        outer = tx["transaction"]["message"]["instructions"][0]
-        outer["accounts"] = [
-            _index(BASE_MINT),
-            _index(BASE_SOURCE),
-            _index(SOL_SOURCE),
-        ]
-        self.assertEqual(_verify(tx).failed_check, "transaction_shape")
-
-        tx = _matching_tx()
-        instruction = tx["meta"]["innerInstructions"][0]["instructions"][0]
-        instruction.pop("programId")
-        instruction["programIdIndex"] = _index(PUMPSWAP_AMM_PROGRAM)
-        self.assertEqual(_verify(tx).failed_check, "transaction_shape")
-
-    def test_parsed_token_program_label_must_match_program_id(self):
-        tx = _matching_tx()
-        for instruction in tx["meta"]["innerInstructions"][0]["instructions"][1:]:
-            instruction["program"] = "spl-token-2022"
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "lp_mint_and_burn")
-
-    def test_conflicting_direct_and_indexed_program_ids_fail_shape(self):
-        tx = _matching_tx()
-        outer = tx["transaction"]["message"]["instructions"][0]
-        outer["programIdIndex"] = _index(PUMPSWAP_AMM_PROGRAM)
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_boolean_lamport_balance_is_not_an_integer(self):
-        tx = _matching_tx()
-        tx["meta"]["preBalances"][_index(SOL_SOURCE)] = True
-        verdict = _verify(tx)
-        self.assertEqual(verdict.failed_check, "transaction_shape")
-
-    def test_lamport_balances_must_be_json_u64_integers(self):
-        for value in ("85000000000", -1, 1 << 64, 85_000_000_000.0):
-            with self.subTest(value=value):
-                tx = _matching_tx()
-                tx["meta"]["preBalances"][_index(SOL_SOURCE)] = value
-                verdict = _verify(tx)
-                self.assertEqual(verdict.failed_check, "transaction_shape")
-
-
-class LamportBoundaryTests(unittest.TestCase):
-    def test_exactly_eighty_sol_passes_and_one_lamport_less_fails(self):
-        tx = _matching_tx()
-        tx["meta"]["preBalances"][_index(SOL_SOURCE)] = 80_000_000_000
-        tx["meta"]["postBalances"][_index(SOL_DESTINATION)] = 80_000_000_000
-        self.assertEqual(_verify(tx).verdict, EVIDENCE_MATCHED)
-
-        tx["meta"]["preBalances"][_index(SOL_SOURCE)] = 79_999_999_999
-        tx["meta"]["postBalances"][_index(SOL_DESTINATION)] = 79_999_999_999
-        self.assertEqual(_verify(tx).failed_check, "migration_sol_flow")
-
-    def test_major_debit_floor_is_exactly_one_sol(self):
-        tx = _matching_tx()
-        tx["meta"]["preBalances"][_index(BASE_SOURCE)] = 1_000_000_000
-        verdict = _verify(tx)
-        accounts = {row["account"] for row in verdict.evidence["sol_flow"]["major_sol_debits"]}
-        self.assertIn(BASE_SOURCE, accounts)
-
-        tx["meta"]["preBalances"][_index(BASE_SOURCE)] = 999_999_999
-        verdict = _verify(tx)
-        accounts = {row["account"] for row in verdict.evidence["sol_flow"]["major_sol_debits"]}
-        self.assertNotIn(BASE_SOURCE, accounts)
+        self.assertFalse(evidence["lp_account_proof"])
+        self.assertTrue(evidence["lp_account_states_invalid"])
 
 
 if __name__ == "__main__":

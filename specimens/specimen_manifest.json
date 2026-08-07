@@ -1,14 +1,16 @@
 {
-  "description": "Real mainnet transactions used as provenance specimens. Every signature and account here is public on-chain data and can be checked on any Solana explorer. This manifest records what each transaction is and the key facts a correct decode must reproduce; it does not contain the raw transactions. Use tools/fetch_specimens.py with your own RPC endpoint to materialize the raw getTransaction responses into specimens/raw/, after which tests/test_specimens.py runs the verifier against them.",
-  "provenance": "Signatures, expected verdicts, and the recorded evidence below were taken from a prior offline decode of these transactions (logs/genuine_grad_fixture_decisions.json in the source research project). The recorded evidence is what that earlier decode observed on chain; the fetch tool and test re-derive the same facts from the freshly fetched transaction and compare, so a wrong or truncated fetch is caught.",
+  "description": "Real mainnet transactions used as mandatory provenance specimens. Every signature and account here is public on-chain data. The committed fixtures contain the parsed transactions and separately fetched PumpSwap pool-account snapshots; tests check each canonical transaction digest and every copied oracle field against this manifest before running the verifier.",
+  "provenance": "Signatures, slots, pool addresses, expected verdicts, and recorded evidence were taken from a prior offline decode of these transactions (logs/genuine_grad_fixture_decisions.json in the source research project) and independently cross-checked against the committed transaction and pool-account data. tools/fetch_specimens.py can refresh the public RPC material without changing this manifest's oracle values.",
   "expected_verdict_values": ["GENUINE_PUMP_FUN_GRADUATION", "NOT_GENUINE_PUMP_FUN_GRADUATION"],
-  "note_on_outcome": "These transactions were classified genuine/not-genuine by the earlier decode. Whether THIS repository's stricter, account-bound verifier reproduces that classification is exactly what the specimen test measures. A genuine specimen that this verifier rejects would be a real finding about the verifier's strictness, not a defect in the specimen.",
+  "note_on_outcome": "The four positive transactions are supported pump.fun migrations whose CreatePool roles match authenticated PumpSwap pool accounts. The negative is an ordinary buy of an already-migrated pool and fails several gates, so it is a weak discriminator; a separate synthetic test isolates the LP-burn requirement. A match establishes migration provenance only, not safety.",
   "specimens": [
     {
       "name": "canonical_positive_1",
       "signature": "426ARdryCJ6JL2RPZ6RRRbjZfEfzkQGfK3Ta1yhYFa7634PjGBLqcJbpamBA5exxQ2Aa4XZv6EmV3Q8uXizpFBMY",
       "slot": 426905196,
+      "transaction_sha256": "4d299cce8d8ed4b4651a0cfc834fd6e22137b79a8acef677af6b509feb407779",
       "base_mint": "QqsdC7q8xMrofZDb9Am7ktw5gJcHtpvW2gr71wYpooL",
+      "expected_pool": "2dSQaWBAvxZzEDFGr6Tt8jTFdHboi1G1xEyNasrzuLda",
       "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
       "recorded_evidence": {
         "sol_migration_debit_sol": 85.005361,
@@ -21,7 +23,9 @@
       "name": "canonical_positive_2",
       "signature": "mabA5Gkfjab3pVE1h22dbdaEbACktgaTKoBhZDgCGGgmigPtjGAsHpSjz1J3gSPPAd7Jib1DNYQj5Zr3z6EDKeG",
       "slot": 426904767,
+      "transaction_sha256": "4644c5766c2e6a3c65d5254569759051b89b1a60011388b3088a65b7880d1017",
       "base_mint": "ADA9mtno4BVknoSefbqdh7aMPg4wwxZHKByRpJNTpump",
+      "expected_pool": "BRZytxygKKETaJ1SSVzy21rjAS3HqNtABRvQK4E7eaX3",
       "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
       "recorded_evidence": {
         "sol_migration_debit_sol": 85.005359,
@@ -34,7 +38,9 @@
       "name": "canonical_positive_3",
       "signature": "3GbqAuXF8AmxhS9FrZBJXoJQ45oecRM1wwaYVtYMNP4m66AYu3zvHU6yPGxVN5wHAS5H3nkcXg39pFnQBPPKcpaM",
       "slot": 426904304,
+      "transaction_sha256": "29e4c01846ae8989437d4424beaee8c64cff49b00d1ffd9cd5f98cc944bb39e4",
       "base_mint": "9qoUsoRmV46jaSxrJJ3C6sAc3sJ7mGAigTGCZk91pump",
+      "expected_pool": "Cs9cNZWKvFNRzJpeZTWnMbknGW6geWa3RckUxKcHLMvg",
       "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
       "recorded_evidence": {
         "sol_migration_debit_sol": 85.005359,
@@ -47,7 +53,9 @@
       "name": "canonical_positive_4",
       "signature": "2nWaSa88b8715bhezsb32s9GuSTAjuJPfPs8Sfti8k9zoJs5t8eMzahDf7JYabWFbGKdnSvQ6PPUnVG9H48hAoGZ",
       "slot": 426901881,
+      "transaction_sha256": "ec79a42885831d5aab1b9f595fcc1f15ca63692bbe25ea7c020b0b8d2ad96e38",
       "base_mint": "Hu1GczL7tWCSDZtRycjDFcmfoU4WU2wCP4ZMRdQpump",
+      "expected_pool": "J5gT23tsCecX3TnNynT7LRtdZuc68vDPXcCtcn5adNsz",
       "expected_verdict": "GENUINE_PUMP_FUN_GRADUATION",
       "recorded_evidence": {
         "sol_migration_debit_sol": 85.00536,
@@ -60,10 +68,12 @@
       "name": "negative_pump_and_pumpswap_no_lp_burn",
       "signature": "3ewQKsS1KhyYcTyyFfjg1CKb4LN6RqGwbB4oXdUAs4bw7eqqREdm44vGPBpxKEcTbhiK51gT2hzHdpUBkUCxga8f",
       "slot": 426901563,
+      "transaction_sha256": "49480822da767b462fb4f44ccb62400970f175c054eec3848a437f2ec6cbe51e",
       "base_mint": "Fvqj37hHtB37A5KnjY7r12E4pgLLUTtJiLFMyswsicar",
+      "expected_pool": "5SjBLH8VNyZ4msiL7ML8jfm9LzArTaKUtmo6gN2STgbT",
       "expected_verdict": "NOT_GENUINE_PUMP_FUN_GRADUATION",
       "recorded_evidence": {
-        "note": "The earlier decode found the pump.fun and PumpSwap programs present but no matching LP mint-and-burn, so provenance was not established. This is the discriminating negative: a transaction that clears the program checks but fails the LP-destruction requirement."
+        "note": "This is an ordinary buy of an already-migrated pool. It contains both program addresses but no successful migration/CreatePool frame and no LP mint-and-burn, so it is a weak negative that fails several gates."
       }
     }
   ]
