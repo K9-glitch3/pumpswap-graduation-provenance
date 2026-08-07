@@ -1,40 +1,42 @@
 # pumpswap-graduation-provenance
 
-Tell a genuine pump.fun graduation apart from a **seeded pool** that only looks
-like one, by checking a pool's creation transaction rather than its appearance.
+Authenticate whether a supported pump.fun migration created a specific
+PumpSwap pool, using its creation transaction and raw pool-account state.
 
-When a pump.fun token finishes its bonding curve, its SOL migrates into a new
-PumpSwap pool. A pool that appears already deep in SOL looks like that event —
-but the same shape is produced by funding a wallet and calling PumpSwap
-`CreatePool` directly, with no pump.fun program involved. The creator holds the
-LP and can withdraw the pool later. [REPORT.md](REPORT.md) shows, from a sample
-of drained pools, why the obvious pre-entry filters (seed size, funding recency,
-creator/funder blocklists) do not separate the two cases — which is why this
-repository checks provenance instead.
+PumpSwap `CreatePool` can be invoked inside or outside a pump.fun migration.
+Initial balances and program co-presence therefore do not authenticate a pool's
+origin. This verifier decodes the pool account, the pump.fun migration, and the
+ordered PumpSwap `CreatePool` roles before checking migration-frame token and LP
+operations.
 
-This is an offline reference implementation of a fixed set of bound
-pump.fun-to-PumpSwap migration-evidence predicates over a parsed Solana
-transaction. The caller supplies the parsed transaction, account identities, and
-separately obtained LP-account state. A matched result means only that every
-implemented predicate matched those inputs. The module makes no network calls,
-constructs no transactions, selects or ranks no pools, and makes no safety or
-trading judgement.
+This is an offline reference implementation over caller-supplied Solana
+evidence. A matched result establishes only that the implemented predicates
+show a supported pump.fun migration created the authenticated pool. It does not
+mean the pool is safe. The verifier makes no network calls, constructs no
+transactions, selects or ranks no pools, and makes no trading judgement.
 
 ## Contents
 
 - `graduation_provenance.py` evaluates caller-supplied transaction evidence.
+- `pumpswap_decoder.py` is the strict pool-state decoder vendored from the
+  sibling `pumpswap-pool-decoder` project under the same MIT license.
 - `analyze_seeded_rugs.py` computes descriptive summaries from the checked-in
   JSON files.
 - `REPORT.md` contains a generated numeric section and states its evidence
   limits.
 - `data/` documents the exact public schemas.
+- `specimens/` contains the manifest and committed real-transaction fixtures
+  used as an offline acceptance gate.
 
 The transaction verifier and the descriptive datasets are separate artifacts.
-The JSON files contain no parsed transactions and do not validate the verifier.
+The two files under `data/` contain no parsed transactions and do not validate
+the verifier.
 
 This repository contains no transaction construction, signing, submission,
 pool selection or ranking, operational rules, observation schedule, economic
-analysis, credentials, endpoints, or wallet-ownership labels.
+analysis, credentials, concrete endpoints, or wallet-ownership labels. The
+caller-run specimen fetcher makes bounded read-only RPC calls when explicitly
+invoked; neither the verifier nor the test suite performs network I/O.
 
 ## Evidence API
 
@@ -42,6 +44,8 @@ analysis, credentials, endpoints, or wallet-ownership labels.
 from graduation_provenance import (
     LpAccountState,
     MigrationContext,
+    PoolAccountEvidence,
+    PUMPSWAP_AMM_PROGRAM,
     verify_migration_evidence,
 )
 
@@ -67,10 +71,16 @@ result = verify_migration_evidence(
             lp_supply_zero=True,
         )
     ],
+    pool_account=PoolAccountEvidence(
+        address=pool_address,
+        owner=PUMPSWAP_AMM_PROGRAM,
+        data_base64=pool_account_data_base64,
+        context_slot=pool_account_context_slot,
+    ),
 )
 
 if result.is_match:
-    ...  # every implemented predicate matched the supplied context
+    ...  # the supported migration created this authenticated pool
 else:
     ...  # result.failed_check names the first predicate not established
 ```
@@ -78,88 +88,103 @@ else:
 `EVIDENCE_MATCHED` means all of the following were established, in this order:
 
 1. the transaction shape is usable and `meta.err` is null;
-2. the base mint and migration context are valid and their accounts are present;
-3. a pump.fun outer instruction and PumpSwap inner instruction are present;
-4. exactly one indexed inner-instruction group binds both instructions to the
-   supplied accounts and provides usable stack-height metadata;
-5. the named SOL source transfers at least 80 SOL to the named destination;
-6. the named base-token source and destination have equal-magnitude negative
-   and positive balance changes, respectively;
-7. below the bound PumpSwap CPI, the named LP mint and account have a positive
-   `mintTo` followed by an equal-amount `burn`; and
-8. caller-supplied state says that exact LP account is closed and the LP mint
+2. the base mint, immutable migration-context snapshot, and raw pool-account
+   snapshot are valid;
+3. the raw bytes decode as a PumpSwap-owned Pool at the expected address, with
+   the supplied base mint and transaction roles matching its decoded mints,
+   vaults, LP mint, creator, and configuration;
+4. exactly one supported pump.fun `Migrate` or `MigrateV2` frame contains a
+   decoded PumpSwap `CreatePool` invocation with the required ordered account
+   roles;
+5. direct child operations in that migration frame move the declared base
+   amount into `CreatePool`, initialise WSOL, and move the instruction-declared
+   base and quote amounts into the authenticated vaults; the decoded bonding-
+   curve account must debit at least 80 SOL and at least the quote amount, but
+   no exact debit/credit equality is assumed;
+6. the LP mint receives exactly one positive `mintTo` below `CreatePool`,
+   followed by a matching `burn` and close in the same pump.fun migration
+   frame, matched by token program ID rather than the RPC program label; and
+7. caller-supplied state says that exact LP account is closed and the LP mint
    supply is zero.
 
 `EVIDENCE_NOT_ESTABLISHED` means at least one required predicate was not
 established, including because input was missing, malformed, failed, or
 inconsistent. It is not proof that no migration occurred.
 
-The public result names an evidence match, not protocol-level authentication.
-It does not establish that the transaction is canonical, determine intent,
-assess safety or future behaviour, or recommend an action.
+The result authenticates the supported migration-to-pool relationship encoded
+by these inputs. It does not determine intent, assess safety or future
+behaviour, or recommend an action.
 
 ## Screening an unknown pool
 
-`verify_migration_evidence` requires every migration account up front, which is
-correct for the strict check but assumes you already know the LP mint, the LP
-account, and the base-token and SOL source/destination accounts. A screener
-examining a new pool knows only the two facts on the pool account itself: the
-pool address and its non-WSOL mint.
-
-`screen_pool` closes that gap. It derives the remaining accounts *structurally*
-from the transaction — the LP mint/burn pair, the two base-mint balance moves,
-and the large bound SOL debit with its matching credit — refuses when any role
-is ambiguous, and then hands the derived context straight to
-`verify_migration_evidence`.
+`verify_migration_evidence` accepts an explicit `MigrationContext` for callers
+that already have the decoded roles. `screen_pool` is the derive-then-verify
+entry point: it authenticates the supplied pool bytes, locates one supported
+migration/`CreatePool` frame, derives the roles from the decoded instruction and
+pool state, and delegates to the same verifier.
 
 ```python
-from graduation_provenance import screen_pool, LpAccountState
+from graduation_provenance import (
+    LpAccountState,
+    PoolAccountEvidence,
+    screen_pool,
+)
 
 result = screen_pool(
     parsed_creation_tx,
-    expected_pool=pool_address,      # the pool you are screening
-    base_mint=pool_base_mint,        # its non-WSOL mint
-    lp_account_states=[LpAccountState(...)],  # obtained separately, as above
+    expected_pool=pool_address,
+    base_mint=pool_base_mint,
+    lp_account_states=[LpAccountState(...)],
+    pool_account=PoolAccountEvidence(...),
 )
 ```
 
-The derivation is a convenience, not a second source of truth. Its output is
-only a candidate context; the strict verifier re-binds and re-checks the whole
-structure, so a wrong derivation fails closed rather than producing a match.
-When derivation itself cannot resolve a role, the verdict's `failed_check` is
-prefixed `derive:` (for example `derive:lp_pair_not_found`).
+The derivation is a convenience, not a second trust path. The transaction and
+pool evidence are snapshotted, and the verifier rechecks the derived immutable
+context. Missing, malformed, unauthenticated, or ambiguous evidence fails
+closed. A derivation failure has a `failed_check` prefixed with `derive:`.
 
 ## Tests
 
 ```text
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-The verifier tests use synthetic transaction dictionaries and supplied account
-state. They open no network connection and are not validation against a
-labelled transaction corpus. The analysis tests enforce the public schemas,
-missing-value counts, descriptive values, and the generated report section.
+The suite includes synthetic rejection cases and five committed real-mainnet
+specimens: four supported migrations must match and one ordinary post-migration
+buy must not. The real negative is a weak discriminator because it fails
+multiple gates, so a separate synthetic case isolates an otherwise valid
+authenticated pool and program structure with no LP burn. Missing or altered
+specimens fail the suite; tests never fetch from the network.
 
-CI runs the same suite on Python 3.11 and 3.13.
+The analysis tests enforce the public schemas, missing-value counts,
+descriptive values, and generated report section. CI runs the complete suite on
+Python 3.10, 3.13, and 3.14.
 
 ## Limits
 
-- Opaque pump.fun and PumpSwap instruction data is required but its
-  discriminator fields are not decoded; the result therefore remains an
-  evidence match.
-- The 80-SOL threshold and 1-SOL diagnostic debit floor are fixed reference
-  predicates, not calibrated performance estimates.
+- Only the explicitly decoded PumpSwap Pool layouts and pump.fun migration /
+  PumpSwap `CreatePool` instruction layouts are supported. Unknown variants
+  fail closed.
+- The 80-SOL floor is a fixed provenance predicate, not a calibrated
+  performance estimate or trading threshold.
+- Pool-account and LP-state snapshots are caller-supplied. The verifier checks
+  their shape and identities, checks the pool owner's supplied RPC metadata,
+  and requires the pool snapshot slot not to precede the transaction. The LP
+  booleans carry no slot or cryptographic attestation. The verifier performs no
+  fetch of its own and cannot prove that supplied RPC metadata is truthful.
+- The parsed transaction and inner-instruction trace are also caller-supplied.
+  The verifier checks their structure and reported success but does not verify a
+  transaction signature or independently attest chain inclusion. The specimen
+  manifest digest pins the committed RPC response; it is not a chain proof.
 - The datasets do not contain the transaction evidence required by the
   verifier and do not establish random or exhaustive sampling.
-- `screen_pool`'s derivation resolves each account role only when it is
-  unambiguous in the transaction and does not rank candidates by magnitude;
-  where a role is ambiguous it fails closed. The strict verifier remains the
-  authority, so a mis-derived account cannot yield a match.
-- Both the verifier and the screening path are exercised against synthetic
-  transaction fixtures only. They encode the intended decision; they have not
-  been run against a labelled corpus of live transactions in this repository.
-- Nothing here supports a population-frequency, classification, execution, or
-  economic claim.
+- The committed real corpus is small, and its sole ordinary-buy negative fails
+  several predicates. It validates those specimens, not broad classifier
+  performance.
+- Nothing here supports a population-frequency, safety, execution, or economic
+  claim.
 
 See [REPORT.md](REPORT.md), [data/README.md](data/README.md), and
 [CONTRIBUTING.md](CONTRIBUTING.md) for the reproducibility boundary.

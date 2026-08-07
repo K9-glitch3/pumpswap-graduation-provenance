@@ -7,6 +7,7 @@ Small, focused pull requests are welcome.
 From the repository root:
 
 ```text
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
@@ -24,15 +25,17 @@ runs it on the Python versions listed in `.github/workflows/tests.yml`.
 - **Keep empirical claims reproducible.** Numeric statements in `REPORT.md`
   must be returned by `analyze_seeded_rugs.py` and asserted by the tests.
 - **Keep result semantics narrow.** An evidence match means the implemented
-  predicates matched the supplied transaction and identifiers. Do not describe
-  it as proof of authenticity or as an assessment of intent, risk, or future
-  behaviour.
+  predicates authenticate that the supplied pool snapshot is structurally a
+  PumpSwap pool and bind its decoded roles to a pump.fun migration frame in the
+  supplied transaction. Do not describe that provenance result as an assessment
+  of intent, risk, or future behaviour.
 - **Malformed evidence does not pass.** Add a rejection test for every newly
   accepted input shape. Booleans must not be accepted as numbers, required
   identifiers and amounts must be non-empty, and missing nested structures must
   produce the documented not-established result.
-- **Synthetic and offline only.** Tests use constructed transaction dictionaries
-  and account-state values. They do not contact an RPC endpoint.
+- **Offline tests only.** The committed specimen tests replay four real
+  migration transactions, one ordinary-buy negative, and constructed adversarial
+  cases. The suite does not contact an RPC endpoint.
 - **No operational material.** Do not add transaction construction, signing,
   submission, selection, ranking, execution rules, acquisition configuration,
   profitability analysis, credentials, endpoints, local paths, or user/author
@@ -43,8 +46,8 @@ runs it on the Python versions listed in `.github/workflows/tests.yml`.
 - It updates code, tests, and documentation together.
 - It asserts an observable success or rejection result.
 - It preserves stable check precedence.
-- It keeps expected pool, base-mint, and LP-mint evidence bound to the same
-  supplied context and instruction group.
+- It keeps the decoded pool roles, migration roles, CreatePool roles, and LP
+  destruction evidence bound to one migration frame.
 - It does not turn missing or malformed evidence into a positive match.
 
 ## Reporting a mismatch

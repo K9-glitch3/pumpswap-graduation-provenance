@@ -7,17 +7,23 @@ on any Solana explorer.
 
 ## What is and is not here
 
-The manifest records, for five real transactions, what each one is (four
-pump.fun graduations and one transaction that has the pump.fun and PumpSwap
-programs but does not destroy its LP), the expected verdict, and the key facts a
-correct decode must reproduce. It does **not** contain the raw transactions —
-those are fetched on demand.
+The manifest records five real transactions: four supported pump.fun migrations
+and one ordinary buy in an already migrated pool. The ordinary-buy negative is
+a weak discriminator because it fails several provenance gates; it is not an
+isolated test of LP destruction. A separate, clearly synthetic test preserves
+the authenticated pool and program structure while removing the LP burn.
 
-The expected verdicts and recorded evidence come from a prior offline decode of
-these transactions in the source research project. Whether *this* repository's
-stricter, account-bound verifier reproduces that classification is exactly what
-the specimen test measures. A genuine specimen this verifier rejects is a real
-finding about the verifier's strictness, not a defect in the specimen.
+The manifest is the independent oracle for each real specimen's signature,
+slot, canonical transaction digest, base mint, expected verdict, and recorded
+evidence. The materialized files under `raw/` contain the public transaction
+response, decoded pool-account snapshot, and LP state used by the verifier. The
+test checks the complete transaction against that digest and cross-checks copied
+fields against the manifest before evaluating it, so a self-consistent but
+altered fixture cannot redefine its own expected result.
+
+Here, a `GENUINE_PUMP_FUN_GRADUATION` label means only that the recorded
+provenance says a supported pump.fun migration created the pool. It is not a
+safety label.
 
 ## Materializing the fixtures
 
@@ -25,19 +31,22 @@ finding about the verifier's strictness, not a defect in the specimen.
 RPC_URL=<your mainnet endpoint> python tools/fetch_specimens.py
 ```
 
-This writes one fixture per specimen into `specimens/raw/`. It is the only code
-in the repository that uses the network, and neither the test suite nor CI runs
-it. Set the endpoint in the environment, not on the command line.
+This regenerates one fixture per manifest entry in `specimens/raw/`, including
+the decoded pool's raw account bytes and required LP state. The fetcher makes
+only read-only RPC calls and exits non-zero if any required transaction or
+account is unavailable. It is the only code in the repository that uses the
+network; neither the test suite nor CI invokes it. Set the endpoint in the
+environment, not on the command line.
 
 ## Running the check
 
 ```text
+python -m pip install -r requirements.txt
 python -m unittest tests.test_specimens -v
 ```
 
-With no fixtures present the module skips, so the default test run and CI need no
-network. Once `specimens/raw/` is populated, each fixture becomes a hard check:
-the verifier must reproduce the manifest's expected verdict for that real
-transaction. If you commit the materialized fixtures, that check runs in CI too —
-which is the point, but it also means a verifier that cannot classify a real
-genuine graduation will turn CI red until the verifier is corrected.
+The five materialized fixtures are committed and mandatory. A missing manifest
+entry, missing or unresolved fixture, empty transaction, copied-field mismatch,
+or wrong verifier verdict fails the test. CI therefore checks that all four
+supported migrations match and the ordinary-buy negative does not, without
+contacting an RPC endpoint.

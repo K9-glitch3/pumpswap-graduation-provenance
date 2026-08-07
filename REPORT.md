@@ -1,52 +1,39 @@
 # A fresh PumpSwap pool is not proof of a pump.fun graduation
 
-When a pump.fun token completes its bonding curve it *graduates*: the curve's
-SOL migrates into a new PumpSwap pool. A pool that appears already deep in SOL
-looks like that event. The same on-chain shape is also produced by a **seeded
-pool** — a funded wallet calls PumpSwap `CreatePool` directly, with no pump.fun
-program involved, holds the LP, and can withdraw both sides of the pool later.
-Buyers who entered because "it just graduated" are the liquidity left behind.
+When a pump.fun token completes its bonding curve, a migration can create a new
+PumpSwap pool. PumpSwap `CreatePool` can also be invoked outside that migration
+path. A pool's initial balances therefore do not, by themselves, establish how
+the pool was created. The verifier checks the creation provenance directly.
 
-This repository has two separate artifacts, and it is careful about which one
-supports which claim:
+The two artifacts support different claims:
 
-- **The data** (`data/`, summarised below) is a sample of pools that were later
-  drained. It supports statements about that sample and nothing wider.
-- **The verifier** (`graduation_provenance.py`) checks, from a pool's creation
-  transaction, whether a pump.fun migration actually produced it. That is a
-  question about a transaction, not about this sample; the two are not mixed.
+- **The data** (`data/`, summarised below) is an outcome-labelled,
+  outcome-selected sample. It supports descriptive statements about those rows
+  and nothing wider.
+- **The verifier** (`graduation_provenance.py`) checks whether a supported
+  pump.fun migration created an authenticated PumpSwap pool. That is a question
+  about transaction and account evidence, not about this sample.
 
 ## What the sample can and cannot show
 
-Every figure in the generated section below is computed by
-`analyze_seeded_rugs.py` from the two JSON files and pinned byte-for-byte by
-`tests/test_analyze_seeded_rugs.py`. The sample is one observation window,
-selected on the drained outcome by construction. It therefore describes *these*
-rows; it is **not** a random or exhaustive draw from PumpSwap, gives no base
-rate of honeypots, and supports no significance test. Missing measurements are
-reported as their own count and never folded silently into a denominator (20 of
-the 189 rug rows, and some matched rows, have no funding data).
+Every figure between the generated-summary markers below is computed by
+`analyze_seeded_rugs.py` from the two descriptive JSON files and compared
+byte-for-byte by `tests/test_analyze_seeded_rugs.py`. The repository does not
+reproduce sample acquisition or outcome-label construction. The rows are not a
+random or exhaustive PumpSwap sample, provide no population base rate, and
+support no significance test. Missing measurements are reported separately and
+never folded silently into a denominator.
 
-Two readings are worth stating in plain language, both taken directly from the
-table:
+For the small outcome-selected matched sample, the table reports the group
+medians for `seed_sol` and `funding_gap_slots`. These are bounded descriptive
+facts, not evidence of predictive performance.
 
-- **The obvious pre-entry filter does not separate the two groups.** In the
-  matched 30-rug / 30-survivor set, the survivors were seeded slightly *larger*
-  (median 158 vs 148 SOL) and funded slightly *later* (median 62 vs 45 slots)
-  than the rugs. Seed size and funding recency do not tell a later-drained pool
-  apart from one that was not. Whatever decides the drain is not visible in
-  these fields at creation time.
-- **Blocklists have little to grip.** The 189 drained pools have 178 distinct
-  creators — a fresh creator almost every time — so a creator blocklist has
-  almost nothing to match. Funders are only mildly concentrated (114 distinct
-  funders across the rows).
+The creator and funder counts below are also descriptive and do not establish
+how useful any identity rule would be in or out of sample.
 
-If appearance and identity at creation time do not separate a seeded pool from
-a genuine graduation, the reliable signal is **provenance**: did a pump.fun
-migration create the pool? That is what the verifier checks, and why it exists.
-It is a question this dataset cannot answer for any specific pool — the JSON
-holds no transactions — which is exactly why the verifier is a separate artifact
-with its own synthetic-fixture tests.
+The descriptive data cannot establish a specific pool's creation provenance
+because it contains no transaction or pool-account evidence. The verifier is a
+separate artifact with real-specimen and synthetic rejection tests.
 
 <!-- BEGIN GENERATED SUMMARY -->
 ## File contents
@@ -86,9 +73,8 @@ with its own synthetic-fixture tests.
 <!-- END GENERATED SUMMARY -->
 
 `outcome` is treated as an input label. This repository does not independently
-establish how that label was assigned. Three `rug` rows and six `surv` rows
-have null funding fields, so the numeric denominators differ from the row
-counts.
+establish how that label was assigned. Missingness is reflected in the numeric
+denominators shown above.
 
 The script does not calculate classification accuracy, effect size,
 statistical significance, confidence intervals, or out-of-sample performance.
@@ -102,6 +88,7 @@ many distinct values appear in these rows.
 
 ```text
 python analyze_seeded_rugs.py
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
@@ -111,10 +98,11 @@ sample acquisition. The generated section above is rendered by
 
 ## Evidence boundary
 
-The checked-in files contain no instruction payloads, program identifiers,
-reserve series, LP operations, or LP-account state. They cannot support claims
-about transaction causality, withdrawal mechanics, program involvement, or
-verifier accuracy.
+The two descriptive data files contain no instruction payloads, program
+identifiers, reserve series, LP operations, or LP-account state. They cannot
+support claims about transaction causality, withdrawal mechanics, program
+involvement, or verifier accuracy.
 
-The files also do not define a random or exhaustive PumpSwap sample. Counts in
-this report describe only the checked-in rows.
+Those files also do not define a random or exhaustive PumpSwap sample. Counts
+in this report describe only the checked-in rows. The committed specimens are a
+separate, small verifier corpus and support conclusions only about those cases.

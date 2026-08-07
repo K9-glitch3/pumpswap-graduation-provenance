@@ -13,7 +13,7 @@ This file contains 189 records. Every row has exactly:
 | `pool_creator` | string | Pool-creator address recorded for the row. |
 | `seed_funder` | string or null | Funding address recorded for the creator, when available. |
 | `seed_sol` | number or null | Recorded funding-transfer value in SOL, represented to at most six decimal places. |
-| `funding_gap_slots` | integer or null | Recorded slot difference between the funding transfer and pool creation. |
+| `funding_gap_slots` | integer or null | Pool-creation slot minus funding-transfer slot. A positive value records funding before creation; a negative value records the reverse. |
 
 ## `seed_timing_matched.json`
 
@@ -41,10 +41,12 @@ denominator and never coerces null to zero.
 `python analyze_seeded_rugs.py` validates the schemas and recomputes descriptive
 summaries from these files. It does not fetch data or reproduce acquisition.
 
-The repository contains no raw observation series or acquisition code. It can
-check schema, row counts, and summaries, but cannot independently establish
-sample selection, outcome-label construction, transaction mechanics, or
-completeness relative to a wider population.
+The descriptive dataset contains no raw observation series or dataset-
+acquisition code. It can support checks of schema, row counts, and summaries,
+but cannot independently establish sample selection, outcome-label
+construction, transaction mechanics, or completeness relative to a wider
+population. The separately documented specimen fetcher acquires public
+transaction fixtures only; it does not reproduce this dataset's acquisition.
 
 Do not add unlisted source fields or document acquisition configuration,
 operational parameters, economics, credentials, endpoints, local paths, or
