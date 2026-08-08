@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pumpswap-graduation-provenance"
+version = "0.1.0"
+description = "Tell a genuine pump.fun graduation apart from a seeded pool by verifying provenance from the pool's creation transaction. Fail-closed and pool-authenticated."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Michael Owusu" }]
+keywords = ["solana", "pumpswap", "pump.fun", "rug", "honeypot", "provenance", "security"]
+dependencies = ["base58>=2.1.1,<3"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/K9-glitch3/pumpswap-graduation-provenance"
+Repository = "https://github.com/K9-glitch3/pumpswap-graduation-provenance"
+Issues = "https://github.com/K9-glitch3/pumpswap-graduation-provenance/issues"
+
+[tool.setuptools]
+py-modules = ["graduation_provenance", "pumpswap_decoder"]
