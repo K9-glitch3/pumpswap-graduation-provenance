@@ -1,5 +1,7 @@
 # pumpswap-graduation-provenance
 
+Part of [Core Vanta's market provenance research](https://core-vanta.com/projects/market-provenance/), a central London AI research lab.
+
 Authenticate whether a supported pump.fun migration created a specific
 PumpSwap pool, using its creation transaction and raw pool-account state.
 
